@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Colour Token Generator</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        --bg: #0f1115;
+        --panel: #1a1d23;
+        --border: #2c3038;
+        --accent: #5a7dff;
+        --text: #f2f4f8;
+        --muted: #9aa1b5;
+        --danger: #ff6b6b;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-size: 12px;
+      }
+
+      h1 {
+        font-size: 15px;
+        margin: 0 0 12px;
+      }
+
+      p {
+        margin: 0 0 8px;
+        color: var(--muted);
+      }
+
+      button,
+      select,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+
+      .app {
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+        flex-direction: column;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      select,
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: transparent;
+      }
+
+      input::placeholder {
+        color: var(--muted);
+      }
+
+      .options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: none;
+        background: var(--border);
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #05060a;
+        font-weight: 600;
+      }
+
+      button.danger {
+        background: var(--danger);
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 180px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #05060a;
+        padding: 12px;
+        color: var(--text);
+        font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+        font-size: 11px;
+        resize: vertical;
+      }
+
+      .status {
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .pill {
+        background: rgba(90, 125, 255, 0.12);
+        color: var(--accent);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+      }
+
+      .helper {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .field-note {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .color-input {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .color-input input {
+        flex: 1;
+      }
+
+      .swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: #222;
+      }
+
+      .range-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .range-row input[type="range"] {
+        flex: 1;
+      }
+
+      .range-row input[type="number"] {
+        width: 64px;
+      }
+
+      .scale-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .scale-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .scale-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .scale-meta {
+        display: flex;
+        flex-direction: column;
+        font-size: 10px;
+        color: var(--muted);
+      }
+
+      .scale-meta code {
+        font-family: "JetBrains Mono", SFMono-Regular, Consolas, monospace;
+      }
+
+      .swatch.small {
+        width: 20px;
+        height: 20px;
+      }
+
+      .matrix-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .matrix-grid {
+        display: grid;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .matrix-row {
+        display: contents;
+      }
+
+      .matrix-cell {
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 10px;
+        text-align: center;
+        min-width: 56px;
+        min-height: 32px;
+      }
+
+      .matrix-cell.header {
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.05);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .matrix-cell.pass {
+        background: rgba(90, 125, 255, 0.15);
+        color: var(--text);
+      }
+
+      .matrix-cell.fail {
+        background: rgba(255, 107, 107, 0.2);
+        color: var(--text);
+      }
+
+      .matrix-note {
+        font-size: 11px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Colour Token Generator</h1>
+        <p>Convert paint styles or selections into shareable colour tokens.</p>
+      </header>
+
+      <section class="card options">
+        <div>
+          <label for="source">Source</label>
+          <select id="source">
+            <option value="styles">Local paint styles</option>
+            <option value="selection">Current selection</option>
+          </select>
+        </div>
+        <div>
+          <label for="format">Format</label>
+          <select id="format">
+            <option value="json">JSON tokens</option>
+            <option value="css">CSS custom properties</option>
+          </select>
+        </div>
+        <div>
+          <label for="primaryColor">Primary colour (hex)</label>
+          <div class="color-input">
+            <input
+              id="primaryColor"
+              placeholder="#3366FF"
+              value="#3366FF"
+              maxlength="7"
+            />
+            <span class="swatch" id="primarySwatch"></span>
+          </div>
+          <p class="field-note">
+            Hue & lightness from this colour seed the greyscale token.
+          </p>
+        </div>
+        <div>
+          <label for="greyscaleSaturation">
+            Greyscale saturation (%)
+            <span class="helper"
+              >(0 = neutral grey, max 30% to keep it “grey”)</span
+            >
+          </label>
+          <div class="range-row">
+            <input
+              type="range"
+              id="greyscaleSaturation"
+              min="0"
+              max="30"
+              value="8"
+            />
+            <input
+              type="number"
+              id="greyscaleSaturationValue"
+              min="0"
+              max="30"
+              value="8"
+            />
+          </div>
+        </div>
+        <div>
+          <label>Derived greyscale preview</label>
+          <div class="color-input">
+            <input id="derivedHex" readonly placeholder="#000000" />
+            <span class="swatch" id="derivedSwatch"></span>
+          </div>
+          <p class="field-note">
+            Updated automatically using H & L from the primary colour.
+          </p>
+        </div>
+        <div>
+          <label for="prefix">
+            Token prefix
+            <span class="helper">(Optional, e.g. <code>color</code>)</span>
+          </label>
+          <input id="prefix" placeholder="colour" />
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" id="nameless" />
+            Include unnamed layers (auto-numbered)
+          </label>
+        </div>
+      </section>
+
+      <section class="card scale-card">
+        <div class="status">
+          <span>Greyscale scale (9 steps)</span>
+          <span class="pill" id="scale-count">0</span>
+        </div>
+        <div class="scale-grid" id="scale-grid">
+          <p class="helper">Generate tokens to preview the scale.</p>
+        </div>
+      </section>
+
+      <section class="card matrix-card">
+        <div class="status">
+          <span>WCAG AA matrix (background × foreground)</span>
+          <span class="pill" id="matrix-pass-count">0</span>
+        </div>
+        <div class="matrix-grid" id="matrix-grid">
+          <p class="helper">
+            Generate tokens to evaluate combinations against 4.5:1.
+          </p>
+        </div>
+        <p class="matrix-note">
+          Rows represent background colours, columns represent foreground
+          colours. Cells highlight combinations meeting the 4.5:1 AA threshold.
+        </p>
+      </section>
+
+      <section class="card actions">
+        <button class="primary" id="generate">Generate tokens</button>
+        <button id="copy" disabled>Copy output</button>
+        <button class="danger" id="close">Close</button>
+      </section>
+
+      <section class="card">
+        <div class="status" id="status">
+          <span>No tokens yet.</span>
+          <span class="pill" id="count-pill">0</span>
+        </div>
+        <textarea id="output" placeholder="Tokens will appear here..." readonly></textarea>
+      </section>
+
+      <section class="helper">
+        Paint styles keep their style names. Selection mode deduplicates colours
+        and respects layer names.
+      </section>
+    </div>
+
+    <script>
+      const sourceEl = document.getElementById("source");
+      const formatEl = document.getElementById("format");
+      const prefixEl = document.getElementById("prefix");
+      const statusEl = document.getElementById("status").firstElementChild;
+      const outputEl = document.getElementById("output");
+      const copyBtn = document.getElementById("copy");
+      const generateBtn = document.getElementById("generate");
+      const closeBtn = document.getElementById("close");
+      const namelessEl = document.getElementById("nameless");
+      const countPill = document.getElementById("count-pill");
+      const primaryEl = document.getElementById("primaryColor");
+      const primarySwatch = document.getElementById("primarySwatch");
+      const greyscaleRange = document.getElementById("greyscaleSaturation");
+      const greyscaleInput = document.getElementById(
+        "greyscaleSaturationValue"
+      );
+      const derivedEl = document.getElementById("derivedHex");
+      const derivedSwatch = document.getElementById("derivedSwatch");
+      const scaleGrid = document.getElementById("scale-grid");
+      const scaleCount = document.getElementById("scale-count");
+      const matrixGrid = document.getElementById("matrix-grid");
+      const matrixPassCount = document.getElementById("matrix-pass-count");
+
+      function setStatus(message, count = 0) {
+        statusEl.textContent = message;
+        countPill.textContent = count;
+      }
+
+      function toggleLoading(isLoading) {
+        generateBtn.disabled = isLoading;
+        generateBtn.textContent = isLoading ? "Scanning…" : "Generate tokens";
+      }
+
+      function clamp(value, min, max) {
+        const num = Number(value);
+        if (Number.isNaN(num)) return min;
+        return Math.min(Math.max(num, min), max);
+      }
+
+      function normalizeHex(value) {
+        if (typeof value !== "string") return null;
+        const trimmed = value.trim().replace(/^#/, "");
+        if (/^[0-9a-fA-F]{3}$/.test(trimmed)) {
+          return `#${trimmed
+            .split("")
+            .map((char) => char + char)
+            .join("")
+            .toUpperCase()}`;
+        }
+        if (/^[0-9a-fA-F]{6}$/.test(trimmed)) {
+          return `#${trimmed.toUpperCase()}`;
+        }
+        return null;
+      }
+
+      function hexToRgb(hex) {
+        const normalized = normalizeHex(hex);
+        if (!normalized) return null;
+        const raw = normalized.replace("#", "");
+        return {
+          r: parseInt(raw.slice(0, 2), 16),
+          g: parseInt(raw.slice(2, 4), 16),
+          b: parseInt(raw.slice(4, 6), 16),
+        };
+      }
+
+      function rgbToHsl(r, g, b) {
+        const rn = r / 255;
+        const gn = g / 255;
+        const bn = b / 255;
+        const max = Math.max(rn, gn, bn);
+        const min = Math.min(rn, gn, bn);
+        const delta = max - min;
+        let h = 0;
+        let s = 0;
+        const l = (max + min) / 2;
+
+        if (delta !== 0) {
+          if (max === rn) {
+            h = ((gn - bn) / delta) % 6;
+          } else if (max === gn) {
+            h = (bn - rn) / delta + 2;
+          } else {
+            h = (rn - gn) / delta + 4;
+          }
+          s = delta / (1 - Math.abs(2 * l - 1));
+        }
+
+        return {
+          h: Math.round((h * 60 + 360) % 360),
+          s: clamp(s, 0, 1),
+          l: clamp(l, 0, 1),
+        };
+      }
+
+      function hslToRgb(h, s, l) {
+        const normalizedH = ((h % 360) + 360) % 360;
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((normalizedH / 60) % 2) - 1));
+        const m = l - c / 2;
+        let rp = 0;
+        let gp = 0;
+        let bp = 0;
+
+        if (normalizedH < 60) {
+          rp = c;
+          gp = x;
+        } else if (normalizedH < 120) {
+          rp = x;
+          gp = c;
+        } else if (normalizedH < 180) {
+          gp = c;
+          bp = x;
+        } else if (normalizedH < 240) {
+          gp = x;
+          bp = c;
+        } else if (normalizedH < 300) {
+          rp = x;
+          bp = c;
+        } else {
+          rp = c;
+          bp = x;
+        }
+
+        return {
+          r: Math.round((rp + m) * 255),
+          g: Math.round((gp + m) * 255),
+          b: Math.round((bp + m) * 255),
+        };
+      }
+
+      function rgbToHex(r, g, b) {
+        const toHex = (value) =>
+          Math.round(value).toString(16).padStart(2, "0").toUpperCase();
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      }
+
+      function relativeLuminance(rgb) {
+        if (!rgb) return null;
+        const transform = (value) => {
+          const channel = value / 255;
+          return channel <= 0.03928
+            ? channel / 12.92
+            : Math.pow((channel + 0.055) / 1.055, 2.4);
+        };
+        return (
+          0.2126 * transform(rgb.r) +
+          0.7152 * transform(rgb.g) +
+          0.0722 * transform(rgb.b)
+        );
+      }
+
+      function getContrastRatio(backgroundHex, foregroundHex) {
+        const bg = hexToRgb(backgroundHex);
+        const fg = hexToRgb(foregroundHex);
+        if (!bg || !fg) return null;
+        const l1 = relativeLuminance(bg);
+        const l2 = relativeLuminance(fg);
+        if (l1 === null || l2 === null) return null;
+        const light = Math.max(l1, l2);
+        const dark = Math.min(l1, l2);
+        return (light + 0.05) / (dark + 0.05);
+      }
+
+      function updateSwatch(element, color) {
+        element.style.background = color || "#222";
+      }
+
+      function renderScale(entries = []) {
+        const list = Array.isArray(entries) ? entries : [];
+        scaleCount.textContent = list.length;
+        scaleGrid.innerHTML = "";
+
+        if (!list.length) {
+          const placeholder = document.createElement("p");
+          placeholder.className = "helper";
+          placeholder.textContent = "Generate tokens to preview the scale.";
+          scaleGrid.appendChild(placeholder);
+          return;
+        }
+
+        list.forEach((entry) => {
+          const item = document.createElement("div");
+          item.className = "scale-item";
+
+          const swatch = document.createElement("span");
+          swatch.className = "swatch small";
+          swatch.style.background = entry.hex || "#222";
+
+          const meta = document.createElement("div");
+          meta.className = "scale-meta";
+          const title = document.createElement("span");
+          title.textContent = entry.name
+            ? entry.name.replace("greyscale.scale.", "")
+            : "—";
+          const hex = document.createElement("code");
+          hex.textContent = entry.hex || "";
+
+          meta.appendChild(title);
+          meta.appendChild(hex);
+
+          item.appendChild(swatch);
+          item.appendChild(meta);
+          scaleGrid.appendChild(item);
+        });
+      }
+
+      function renderContrastMatrix(entries = []) {
+        const colors = Array.isArray(entries) ? entries : [];
+        matrixPassCount.textContent = "0";
+        matrixGrid.innerHTML = "";
+
+        if (!colors.length) {
+          const placeholder = document.createElement("p");
+          placeholder.className = "helper";
+          placeholder.textContent =
+            "Generate tokens to evaluate combinations against 4.5:1.";
+          matrixGrid.appendChild(placeholder);
+          matrixGrid.style.gridTemplateColumns = "1fr";
+          return;
+        }
+
+        matrixGrid.style.gridTemplateColumns = `repeat(${
+          colors.length + 1
+        }, minmax(70px, 1fr))`;
+
+        const formatName = (name) =>
+          name ? name.replace("greyscale.scale.", "") : "base";
+
+        const createCell = (text, extraClass) => {
+          const cell = document.createElement("div");
+          cell.className = `matrix-cell${extraClass ? ` ${extraClass}` : ""}`;
+          cell.textContent = text;
+          return cell;
+        };
+
+        matrixGrid.appendChild(createCell("", "header"));
+        colors.forEach((color) => {
+          matrixGrid.appendChild(createCell(formatName(color.name), "header"));
+        });
+
+        let passCount = 0;
+
+        colors.forEach((bgColor) => {
+          matrixGrid.appendChild(createCell(formatName(bgColor.name), "header"));
+          colors.forEach((fgColor) => {
+            const ratio = getContrastRatio(bgColor.hex, fgColor.hex);
+            const isPass = typeof ratio === "number" && ratio >= 4.5;
+            if (isPass) {
+              passCount += 1;
+            }
+            const cell = document.createElement("div");
+            cell.className = `matrix-cell ${
+              isPass ? "pass" : "fail"
+            } bg-${formatName(bgColor.name)} fg-${formatName(fgColor.name)}`;
+            cell.textContent =
+              typeof ratio === "number" ? `${ratio.toFixed(1)}×` : "—";
+            matrixGrid.appendChild(cell);
+          });
+        });
+
+        matrixPassCount.textContent = passCount;
+      }
+
+      function updateDerived() {
+        const normalized = normalizeHex(primaryEl.value);
+        updateSwatch(primarySwatch, normalized);
+        const rgb = normalized ? hexToRgb(normalized) : null;
+        if (!rgb) {
+          derivedEl.value = "";
+          updateSwatch(derivedSwatch, "#222");
+          return null;
+        }
+        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        const sat = clamp(greyscaleInput.value, 0, 30) / 100;
+        const derivedRgb = hslToRgb(hsl.h, sat, hsl.l);
+        const derivedHex = rgbToHex(derivedRgb.r, derivedRgb.g, derivedRgb.b);
+        derivedEl.value = derivedHex;
+        updateSwatch(derivedSwatch, derivedHex);
+        return derivedHex;
+      }
+
+      greyscaleRange.addEventListener("input", (event) => {
+        greyscaleInput.value = event.target.value;
+        updateDerived();
+      });
+
+      greyscaleInput.addEventListener("input", (event) => {
+        const clamped = clamp(event.target.value, 0, 30);
+        greyscaleInput.value = clamped;
+        greyscaleRange.value = clamped;
+        updateDerived();
+      });
+
+      primaryEl.addEventListener("input", updateDerived);
+      updateDerived();
+      renderScale();
+      renderContrastMatrix();
+
+      generateBtn.addEventListener("click", () => {
+        toggleLoading(true);
+        setStatus("Looking for colours…");
+        renderScale();
+        renderContrastMatrix();
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "generate-tokens",
+              source: sourceEl.value,
+              format: formatEl.value,
+              prefix: prefixEl.value,
+              includeNameless: namelessEl.checked,
+              primaryColor: primaryEl.value,
+              greySaturation: greyscaleInput.value,
+            },
+          },
+          "*"
+        );
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(outputEl.value);
+          setStatus("Copied to clipboard!", Number(countPill.textContent));
+        } catch (err) {
+          setStatus("Copy failed. Select and copy manually.");
+        }
+      });
+
+      closeBtn.addEventListener("click", () => {
+        parent.postMessage(
+          { pluginMessage: { type: "close-plugin" } },
+          "*"
+        );
+      });
+
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        toggleLoading(false);
+
+        if (!msg || msg.type !== "tokens-generated") {
+          return;
+        }
+
+        if (msg.derivedColor) {
+          derivedEl.value = msg.derivedColor;
+          updateSwatch(derivedSwatch, msg.derivedColor);
+        }
+
+        if (msg.derivedScale) {
+          renderScale(msg.derivedScale);
+          renderContrastMatrix(msg.derivedScale);
+        } else {
+          renderScale();
+          renderContrastMatrix();
+        }
+
+        if (msg.status === "error") {
+          setStatus(`Error: ${msg.message}`);
+          outputEl.value = "";
+          copyBtn.disabled = true;
+          return;
+        }
+
+        if (msg.status === "empty") {
+          setStatus("Nothing found for this source.", 0);
+          outputEl.value = "";
+          copyBtn.disabled = true;
+          return;
+        }
+
+        outputEl.value = msg.output;
+        copyBtn.disabled = false;
+        setStatus(`Generated ${msg.metadata.count} tokens`, msg.metadata.count);
+      };
+    </script>
+  </body>
+</html>
+

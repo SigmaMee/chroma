@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Colour Token Generator (Web)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div>
+          <h1>Colour Token Generator</h1>
+          <p>
+            Standalone web version of the Figma plugin. Generate greyscale tokens
+            plus WCAG AA matrices right in the browser.
+          </p>
+        </div>
+        <div class="badge">Web</div>
+      </header>
+
+      <section class="card options">
+        <div>
+          <label for="primaryColor">Primary colour (hex)</label>
+          <div class="color-input">
+            <input
+              id="primaryColor"
+              value="#3366FF"
+              maxlength="7"
+              placeholder="#3366FF"
+            />
+            <span class="swatch" id="primarySwatch"></span>
+            <input type="color" id="colorPicker" value="#3366FF" />
+          </div>
+          <p class="helper">
+            Hue & lightness seed the greyscale. Saturation caps at 30%.
+          </p>
+        </div>
+        <div>
+          <label for="greyscaleSaturation">
+            Greyscale saturation (%)
+            <span class="helper">(0 = neutral, max 30)</span>
+          </label>
+          <div class="range-row">
+            <input type="range" id="greyscaleSaturation" min="0" max="30" value="8" />
+            <input
+              type="number"
+              id="greyscaleSaturationValue"
+              min="0"
+              max="30"
+              value="8"
+            />
+          </div>
+        </div>
+        <div>
+          <label for="format">Output format</label>
+          <select id="format">
+            <option value="json">JSON tokens</option>
+            <option value="css">CSS custom properties</option>
+          </select>
+        </div>
+        <div>
+          <label for="prefix">
+            Token prefix
+            <span class="helper">(Optional, e.g. <code>color</code>)</span>
+          </label>
+          <input id="prefix" placeholder="colour" />
+        </div>
+      </section>
+
+      <section class="card derived">
+        <div class="status">
+          <span>Derived greyscale</span>
+          <span class="pill" id="derivedLabel">—</span>
+        </div>
+        <div class="color-input">
+          <input id="derivedHex" readonly placeholder="#000000" />
+          <span class="swatch" id="derivedSwatch"></span>
+        </div>
+      </section>
+
+      <section class="card scale-card">
+        <div class="status">
+          <span>Greyscale scale (9 steps)</span>
+          <span class="pill" id="scale-count">0</span>
+        </div>
+        <div class="scale-grid" id="scale-grid">
+          <p class="helper">Generate tokens to preview the scale.</p>
+        </div>
+      </section>
+
+      <section class="card matrix-card">
+        <div class="status">
+          <span>WCAG contrast matrix (background × foreground)</span>
+          <span class="pill" id="matrix-pass-count">0</span>
+        </div>
+        <div>
+          <label for="complianceLevel">Compliance level</label>
+          <select id="complianceLevel">
+            <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
+            <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
+          </select>
+        </div>
+        <div class="matrix-grid" id="matrix-grid">
+          <p class="helper">Generate tokens to evaluate combinations.</p>
+        </div>
+        <p class="matrix-note" id="matrix-note">
+          Rows are backgrounds, columns are foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+        </p>
+      </section>
+
+      <section class="card actions">
+        <button class="primary" id="generate">Generate tokens</button>
+        <button id="copy" disabled>Copy output</button>
+        <button id="reset">Reset</button>
+      </section>
+
+      <section class="card">
+        <div class="status">
+          <span>Token output</span>
+          <span class="pill" id="token-count">0</span>
+        </div>
+        <textarea
+          id="output"
+          placeholder="Generate tokens to view JSON or CSS output."
+          readonly
+        ></textarea>
+      </section>
+
+      <footer>
+        <p>
+          This web tool mirrors the logic of the Figma plugin. No data ever
+          leaves your browser.
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
+
