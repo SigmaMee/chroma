@@ -10,6 +10,8 @@ const derivedSwatch = document.getElementById("derivedSwatch");
 const derivedLabel = document.getElementById("derivedLabel");
 const scaleGrid = document.getElementById("scale-grid");
 const scaleCount = document.getElementById("scale-count");
+const primaryScaleGrid = document.getElementById("primary-scale-grid");
+const primaryScaleCount = document.getElementById("primary-scale-count");
 const matrixGrid = document.getElementById("matrix-grid");
 const matrixPassCount = document.getElementById("matrix-pass-count");
 const matrixNote = document.getElementById("matrix-note");
@@ -155,13 +157,13 @@ function generateGreyscaleScale(data) {
 
   const { hsl, saturation } = data;
   let lighterSteps = 4;
-  let darkerSteps = 4;
+  let darkerSteps = 5;
 
   if (hsl.l > 0.6) {
     lighterSteps = 0;
-    darkerSteps = 8;
+    darkerSteps = 9;
   } else if (hsl.l < 0.2) {
-    lighterSteps = 8;
+    lighterSteps = 9;
     darkerSteps = 0;
   }
 
@@ -193,20 +195,86 @@ function generateGreyscaleScale(data) {
     .concat(darken.sort((a, b) => b.lightness - a.lightness));
 
   const scaleLabels = [
+    "50",
     "100",
     "200",
     "300",
-    "400",
     "500",
     "600",
     "700",
     "800",
     "900",
+    "950",
   ];
 
-  return ordered.slice(0, 9).map((entry, index) => ({
+  return ordered.slice(0, 10).map((entry, index) => ({
     name: `greyscale.scale.${scaleLabels[index]}`,
     hex: entry.hex,
+    isSeed: entry.hex === data.hex,
+  }));
+}
+
+function generatePrimaryScale(data) {
+  if (!data || !data.hsl) {
+    return [];
+  }
+
+  const { hsl } = data;
+  let lighterSteps = 4;
+  let darkerSteps = 5;
+
+  if (hsl.l > 0.6) {
+    lighterSteps = 0;
+    darkerSteps = 9;
+  } else if (hsl.l < 0.2) {
+    lighterSteps = 9;
+    darkerSteps = 0;
+  }
+
+  const lighten = [];
+  for (let i = 1; i <= lighterSteps; i += 1) {
+    const ratio = i / (lighterSteps + 1);
+    const lightness = clamp(hsl.l + (1 - hsl.l) * ratio, 0, 1);
+    const rgb = hslToRgb(hsl.h, hsl.s, lightness);
+    lighten.push({
+      hex: rgbToHex(rgb.r, rgb.g, rgb.b),
+      lightness,
+    });
+  }
+
+  const darken = [];
+  for (let i = 1; i <= darkerSteps; i += 1) {
+    const ratio = i / (darkerSteps + 1);
+    const lightness = clamp(hsl.l - hsl.l * ratio, 0, 1);
+    const rgb = hslToRgb(hsl.h, hsl.s, lightness);
+    darken.push({
+      hex: rgbToHex(rgb.r, rgb.g, rgb.b),
+      lightness,
+    });
+  }
+
+  const ordered = []
+    .concat(lighten.sort((a, b) => b.lightness - a.lightness))
+    .concat([{ hex: data.hex, lightness: hsl.l }])
+    .concat(darken.sort((a, b) => b.lightness - a.lightness));
+
+  const scaleLabels = [
+    "50",
+    "100",
+    "200",
+    "300",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+    "950",
+  ];
+
+  return ordered.slice(0, 10).map((entry, index) => ({
+    name: `color.primary.${scaleLabels[index]}`,
+    hex: entry.hex,
+    isSeed: entry.hex === data.hex,
   }));
 }
 
@@ -238,15 +306,52 @@ function getContrastRatio(bgHex, fgHex) {
 }
 
 function formatTokens(tokens, format) {
+  // Accept either a nested W3C tokens object or a flattened array/map
+  // Helper: flatten nested token object into map of dot-keys -> leaf
+  function flatten(obj, parent = "") {
+    const map = {};
+    Object.keys(obj || {}).forEach((key) => {
+      const val = obj[key];
+      const path = parent ? `${parent}.${key}` : key;
+      if (val && typeof val === "object" && Object.prototype.hasOwnProperty.call(val, "value")) {
+        map[path] = val;
+      } else if (val && typeof val === "object") {
+        Object.assign(map, flatten(val, path));
+      }
+    });
+    return map;
+  }
+
+  let tokenMap = {};
+  if (Array.isArray(tokens)) {
+    // legacy array of { name, hex }
+    tokens.forEach((t) => {
+      tokenMap[t.name] = { value: t.hex, type: "color" };
+    });
+  } else if (tokens && typeof tokens === "object") {
+    tokenMap = flatten(tokens);
+  }
+
   if (format === "css") {
-    const lines = tokens.map((token) => `  --${token.name}: ${token.hex};`);
+    const lines = Object.keys(tokenMap).map((name) => {
+      const safeName = name.replace(/\./g, "-").replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
+      return `  --${safeName}: ${tokenMap[name].value};`;
+    });
     return `:root {\n${lines.join("\n")}\n}`;
   }
-  const json = tokens.reduce((acc, token) => {
-    acc[token.name] = token.hex;
+
+  // Default: W3C-style nested JSON (already provided by createTokens), but
+  // if we received a flattened map, reconstruct a nested object for output.
+  if (tokens && typeof tokens === "object" && !Array.isArray(tokens)) {
+    return JSON.stringify(tokens, null, 2);
+  }
+
+  // Fallback: return flattened JSON
+  const flatJson = Object.keys(tokenMap).reduce((acc, name) => {
+    acc[name] = tokenMap[name].value;
     return acc;
   }, {});
-  return JSON.stringify(json, null, 2);
+  return JSON.stringify(flatJson, null, 2);
 }
 
 function renderScale(scale) {
@@ -272,6 +377,7 @@ function renderScale(scale) {
     const meta = document.createElement("div");
     meta.className = "scale-meta";
     const title = document.createElement("span");
+    // For greyscale preview, show the short numeric label (e.g. "100")
     title.textContent = entry.name.replace("greyscale.scale.", "");
     const hex = document.createElement("code");
     hex.textContent = entry.hex;
@@ -281,6 +387,43 @@ function renderScale(scale) {
     item.appendChild(swatch);
     item.appendChild(meta);
     scaleGrid.appendChild(item);
+  });
+}
+
+function renderPrimaryScale(scale) {
+  const list = Array.isArray(scale) ? scale : [];
+  if (!primaryScaleGrid) return;
+  primaryScaleGrid.innerHTML = "";
+  if (primaryScaleCount) primaryScaleCount.textContent = list.length.toString();
+
+  if (!list.length) {
+    const placeholder = document.createElement("p");
+    placeholder.className = "helper";
+    placeholder.textContent = "Generate tokens to preview the primary color scale.";
+    primaryScaleGrid.appendChild(placeholder);
+    return;
+  }
+
+  list.forEach((entry) => {
+    const item = document.createElement("div");
+    item.className = "scale-item";
+    const swatch = document.createElement("span");
+    swatch.className = "swatch small";
+    swatch.style.background = entry.hex;
+
+    const meta = document.createElement("div");
+    meta.className = "scale-meta";
+    const title = document.createElement("span");
+    // show the short numeric label for primary e.g. "100"
+    title.textContent = entry.name.replace("color.primary.", "");
+    const hex = document.createElement("code");
+    hex.textContent = entry.hex;
+    meta.appendChild(title);
+    meta.appendChild(hex);
+
+    item.appendChild(swatch);
+    item.appendChild(meta);
+    primaryScaleGrid.appendChild(item);
   });
 }
 
@@ -315,7 +458,7 @@ function renderMatrix(scale) {
   colors.forEach((color) => {
     const cell = document.createElement("div");
     cell.className = "matrix-cell header";
-    cell.textContent = color.name.replace("greyscale.scale.", "");
+    cell.textContent = color.name.replace("greyscale.scale.", "neutral.");
     matrixGrid.appendChild(cell);
   });
 
@@ -325,7 +468,7 @@ function renderMatrix(scale) {
   colors.forEach((bg) => {
     const rowHeader = document.createElement("div");
     rowHeader.className = "matrix-cell header";
-    rowHeader.textContent = bg.name.replace("greyscale.scale.", "");
+    rowHeader.textContent = bg.name.replace("greyscale.scale.", "neutral.");
     matrixGrid.appendChild(rowHeader);
 
     colors.forEach((fg) => {
@@ -367,16 +510,83 @@ function updateDerivedPreview() {
   return derived;
 }
 
-function createTokens(scale, prefix) {
+function createTokens(scale, prefix, primaryData, derivedData) {
   const safePrefix = (prefix || "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9.-]/g, "")
     .replace(/^\.+|\.+$/g, "");
-  return scale.map((item) => ({
-    name: safePrefix ? `${safePrefix}.${item.name}` : item.name,
-    hex: item.hex,
-  }));
+
+  // Build a nested W3C design tokens object following template structure:
+  // color.seed.primary, color.seed.neutral, color.palettes.primary.*, color.palettes.neutral.*
+  const root = {};
+  const colorGroup = safePrefix ? { [safePrefix]: {} } : { color: {} };
+  const colorKey = safePrefix ? safePrefix : "color";
+
+  // Initialize structure
+  if (!root[colorKey]) root[colorKey] = {};
+  if (!root[colorKey].seed) root[colorKey].seed = {};
+  if (!root[colorKey].palettes) root[colorKey].palettes = {};
+
+  // Add seed colors
+  if (primaryData && primaryData.hex) {
+    root[colorKey].seed.primary = {
+      $value: primaryData.hex,
+      $type: "color",
+      $description: "Primary seed color",
+    };
+  }
+
+  if (derivedData && derivedData.hex) {
+    root[colorKey].seed.neutral = {
+      $value: derivedData.hex,
+      $type: "color",
+      $description: "Neutral seed color",
+    };
+  }
+
+  // Add palettes (primary and neutral scales)
+  root[colorKey].palettes = root[colorKey].palettes || {};
+  root[colorKey].palettes.primary = {};
+  root[colorKey].palettes.neutral = {};
+
+  scale.forEach((item) => {
+    // Determine if this is a primary or neutral entry and extract the label
+    let isPrimary = false;
+    let label = null;
+
+    if (item.name.includes("color.primary")) {
+      isPrimary = true;
+      label = item.name.replace("color.primary.", "");
+    } else if (item.name.includes("greyscale.scale")) {
+      isPrimary = false;
+      label = item.name.replace("greyscale.scale.", "");
+    }
+
+    if (label) {
+      const tokenObj = {
+        $value: item.hex,
+        $type: "color",
+      };
+
+      // Use reference for seed colors (500)
+      if (label === "500") {
+        if (isPrimary && item.isSeed) {
+          tokenObj.$value = "{color.seed.primary}";
+        } else if (!isPrimary && item.isSeed) {
+          tokenObj.$value = "{color.seed.neutral}";
+        }
+      }
+
+      if (isPrimary) {
+        root[colorKey].palettes.primary[label] = tokenObj;
+      } else {
+        root[colorKey].palettes.neutral[label] = tokenObj;
+      }
+    }
+  });
+
+  return root;
 }
 
 function generateTokens() {
@@ -391,13 +601,43 @@ function generateTokens() {
   }
 
   const scale = generateGreyscaleScale(derived);
+  // Build primaryData from the user's primary input so the primary scale uses the actual primary seed
+  const primaryHex = normalizeHex(primaryInput.value);
+  let primaryData = null;
+  if (primaryHex) {
+    const prgb = hexToRgb(primaryHex);
+    if (prgb) {
+      primaryData = { hex: primaryHex, hsl: rgbToHsl(prgb.r, prgb.g, prgb.b) };
+    }
+  }
+  const primaryScale = generatePrimaryScale(primaryData);
+  // Render greyscale and primary scales in separate preview sections
   renderScale(scale);
+  renderPrimaryScale(primaryScale);
+  // Matrix should only use the greyscale combinations
   renderMatrix(scale);
 
-  const tokens = createTokens(scale, prefixInput.value);
-  tokenCount.textContent = tokens.length.toString();
+  // Pass primaryData and derived (greyscale) so aliases and scales use correct seeds
+  const tokens = createTokens(scale.concat(primaryScale), prefixInput.value, primaryData, derived);
+
+  // Count leaves in the nested W3C tokens object
+  function countLeaves(obj) {
+    let count = 0;
+    Object.keys(obj || {}).forEach((key) => {
+      const val = obj[key];
+      if (val && typeof val === "object" && Object.prototype.hasOwnProperty.call(val, "value")) {
+        count += 1;
+      } else if (val && typeof val === "object") {
+        count += countLeaves(val);
+      }
+    });
+    return count;
+  }
+
+  const total = countLeaves(tokens);
+  tokenCount.textContent = total.toString();
   output.value = formatTokens(tokens, formatSelect.value);
-  copyBtn.disabled = tokens.length === 0;
+  copyBtn.disabled = total === 0;
 }
 
 // Color picker functionality for primary color
@@ -440,8 +680,8 @@ generateBtn.addEventListener("click", generateTokens);
 complianceLevel.addEventListener("change", () => {
   const derived = deriveGreyscaleColor(primaryInput.value, satInput.value);
   if (derived) {
-    const scale = generateGreyscaleScale(derived);
-    renderMatrix(scale);
+    const gScale = generateGreyscaleScale(derived);
+    renderMatrix(gScale);
   } else {
     renderMatrix();
   }
@@ -479,9 +719,17 @@ resetBtn.addEventListener("click", () => {
   derivedSwatch.style.background = "#222";
   derivedLabel.textContent = "—";
   renderScale();
+  renderPrimaryScale();
   renderMatrix();
 });
 
+// Ensure the primary input and color picker are synchronized on load
+const _initialPrimary = normalizeHex(primaryInput && primaryInput.value ? primaryInput.value : "");
+if (_initialPrimary) {
+  if (primaryInput) primaryInput.value = _initialPrimary;
+  if (primaryColorPicker) primaryColorPicker.value = _initialPrimary;
+}
 updateDerivedPreview();
 renderScale();
 renderMatrix();
+renderPrimaryScale();

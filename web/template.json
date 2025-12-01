@@ -1,0 +1,31 @@
+{
+    "color":{
+"seed":{
+    "primary":{
+       "$value":"#3498db",
+         "$type":"color",
+         "$description":"Primary seed color"
+    },
+    "neutral":{
+       "$value":"#95a5a6",
+         "$type":"color",
+         "$description":"Neutral seed color"
+        }
+    
+},
+"palettes":{
+    "primary":{
+       "100":{"$value":"#eaf4fb","$type":"color"},
+       "200":{"$value":"#d4e9f7","$type":"color"},
+       "300":{"$value":"#add4f1","$type":"color"},
+       "400":{"$value":"{colors.seed.primary}","$type":"color"}
+    },
+    "neutral":{
+       "100":{"$value":"#f5f5f5","$type":"color"},
+       "200":{"$value":"#e0e0e0","$type":"color"},
+       "300":{"$value":"#bdbdbd","$type":"color"},
+       "400":{"$value":"{colors.seed.neutral}","$type":"color"}
+    }
+}
+    }
+}
