@@ -1,5 +1,6 @@
 const primaryInput = document.getElementById("primaryColor");
 const primarySwatch = document.getElementById("primarySwatch");
+const primaryColorPicker = document.getElementById("primaryColorPicker");
 const satRange = document.getElementById("greyscaleSaturation");
 const satInput = document.getElementById("greyscaleSaturationValue");
 const formatSelect = document.getElementById("format");
@@ -399,7 +400,26 @@ function generateTokens() {
   copyBtn.disabled = tokens.length === 0;
 }
 
+// Color picker functionality for primary color
+if (primaryColorPicker) {
+  // Open color picker when swatch is clicked
+  primarySwatch.addEventListener("click", () => {
+    primaryColorPicker.click();
+  });
+
+  // Update text input and swatch when color picker changes
+  primaryColorPicker.addEventListener("input", (e) => {
+    const color = e.target.value.toUpperCase();
+    primaryInput.value = color;
+    updateDerivedPreview();
+  });
+}
+
 primaryInput.addEventListener("input", () => {
+  const normalized = normalizeHex(primaryInput.value);
+  if (normalized && primaryColorPicker) {
+    primaryColorPicker.value = normalized;
+  }
   updateDerivedPreview();
 });
 
@@ -444,6 +464,9 @@ copyBtn.addEventListener("click", async () => {
 
 resetBtn.addEventListener("click", () => {
   primaryInput.value = "#3366FF";
+  if (primaryColorPicker) {
+    primaryColorPicker.value = "#3366FF";
+  }
   satRange.value = "8";
   satInput.value = "8";
   prefixInput.value = "";
@@ -462,4 +485,3 @@ resetBtn.addEventListener("click", () => {
 updateDerivedPreview();
 renderScale();
 renderMatrix();
-
