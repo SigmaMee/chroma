@@ -278,6 +278,72 @@ textarea {
   color: var(--muted);
 }
 
+.semantic-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sample-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.sample-card {
+  flex: 1;
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+}
+
+.sample-surface-label {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.sample-surface-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.text { font-size: 14px; }
+.text-primary { font-weight: 700; }
+.text-secondary { opacity: 0.85 }
+.text-tertiary { opacity: 0.65 }
+
+.text-primary-inv { font-weight: 700; }
+.text-secondary-inv { opacity: 0.85 }
+.text-tertiary-inv { opacity: 0.65 }
+
+.sample-outline {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.06);
+  text-align: center;
+}
+
+.sample-primary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.sample-primary-contrast {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-on-primary { font-weight: 700; color: var(--text); }
+.text-on-primary-sub { opacity: 0.9; }
+.text-on-primary-hex { font-family: "JetBrains Mono", monospace; }
+
 .actions {
   display: flex;
   flex-wrap: wrap;

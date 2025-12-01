@@ -18,6 +18,67 @@ function generateRandomTintAmounts() {
   tintAmounts.mid = 9 + Math.random() * 0.5;
   tintAmounts.high = 16 + Math.random() * 0.65;
 }
+
+function renderSemanticPreview(semantic, neutralScale, primaryScale) {
+  // Resolve refs -> hex for preview display (we already stored hex values in semantic)
+  try {
+    // Surfaces
+    const elSurface = document.getElementById('sample-surface');
+    const elSurfaceVariant = document.getElementById('sample-surface-variant');
+    const elSurfaceInverted = document.getElementById('sample-surface-inverted');
+    if (elSurface) elSurface.style.background = semantic.surface.hex;
+    if (elSurfaceVariant) elSurfaceVariant.style.background = semantic.surfaceVariant.hex;
+    if (elSurfaceInverted) elSurfaceInverted.style.background = semantic.surfaceInverted.hex;
+
+    // Text on regular surfaces
+    const setText = (rootIdPrefix, textObj) => {
+      const p = document.querySelector(`#${rootIdPrefix} .text-primary`);
+      const s = document.querySelector(`#${rootIdPrefix} .text-secondary`);
+      const t = document.querySelector(`#${rootIdPrefix} .text-tertiary`);
+      if (p) p.style.color = textObj.primary.hex;
+      if (s) s.style.color = textObj.secondary.hex;
+      if (t) t.style.color = textObj.tertiary.hex;
+    };
+
+    setText('sample-surface', { primary: semantic.text.primary, secondary: semantic.text.secondary, tertiary: semantic.text.tertiary });
+    setText('sample-surface-variant', { primary: semantic.text.primary, secondary: semantic.text.secondary, tertiary: semantic.text.tertiary });
+
+    // Inverted text
+    const pInv = document.querySelector('#sample-surface-inverted .text-primary-inv');
+    const sInv = document.querySelector('#sample-surface-inverted .text-secondary-inv');
+    const tInv = document.querySelector('#sample-surface-inverted .text-tertiary-inv');
+    if (pInv) pInv.style.color = semantic.text.primaryInverted.hex;
+    if (sInv) sInv.style.color = semantic.text.secondaryInverted.hex;
+    if (tInv) tInv.style.color = semantic.text.tertiaryInverted.hex;
+
+    // Outlines
+    const outDefault = document.getElementById('sample-outline-default');
+    const outSubtle = document.getElementById('sample-outline-subtle');
+    const outIntense = document.getElementById('sample-outline-intense');
+    if (outDefault) outDefault.style.borderColor = semantic.outline.default.hex;
+    if (outSubtle) outSubtle.style.borderColor = semantic.outline.subtle.hex;
+    if (outIntense) outIntense.style.borderColor = semantic.outline.intense.hex;
+    
+    // Primary + onPrimary preview
+    const primaryCard = document.getElementById('sample-primary');
+    const primaryContrastCard = document.getElementById('sample-primary-contrast');
+    const onPrimaryHexEl = document.getElementById('sample-on-primary-hex');
+    if (primaryCard && semantic.onPrimary && semantic.onPrimary.primaryHex) {
+      primaryCard.style.background = semantic.onPrimary.primaryHex;
+      const pText = primaryCard.querySelector('.text-on-primary');
+      const pSub = primaryCard.querySelector('.text-on-primary-sub');
+      if (pText) pText.style.color = semantic.onPrimary.hex;
+      if (pSub) pSub.style.color = semantic.onPrimary.hex;
+    }
+    if (primaryContrastCard && semantic.onPrimary) {
+      if (onPrimaryHexEl) onPrimaryHexEl.textContent = semantic.onPrimary.hex;
+      primaryContrastCard.style.background = semantic.onPrimary.hex;
+    }
+  } catch (e) {
+    // ignore preview errors
+    console.warn('semantic preview error', e);
+  }
+}
 const prefixInput = document.getElementById("prefix");
 const derivedHexInput = document.getElementById("derivedHex");
 const derivedSwatch = document.getElementById("derivedSwatch");
@@ -336,7 +397,7 @@ function formatTokens(tokens, format) {
     Object.keys(obj || {}).forEach((key) => {
       const val = obj[key];
       const path = parent ? `${parent}.${key}` : key;
-      if (val && typeof val === "object" && Object.prototype.hasOwnProperty.call(val, "value")) {
+      if (val && typeof val === "object" && (Object.prototype.hasOwnProperty.call(val, "$value") || Object.prototype.hasOwnProperty.call(val, "value"))) {
         map[path] = val;
       } else if (val && typeof val === "object") {
         Object.assign(map, flatten(val, path));
@@ -358,7 +419,8 @@ function formatTokens(tokens, format) {
   if (format === "css") {
     const lines = Object.keys(tokenMap).map((name) => {
       const safeName = name.replace(/\./g, "-").replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
-      return `  --${safeName}: ${tokenMap[name].value};`;
+      const tokenValue = tokenMap[name].$value || tokenMap[name].value;
+      return `  --${safeName}: ${tokenValue};`;
     });
     return `:root {\n${lines.join("\n")}\n}`;
   }
@@ -371,7 +433,7 @@ function formatTokens(tokens, format) {
 
   // Fallback: return flattened JSON
   const flatJson = Object.keys(tokenMap).reduce((acc, name) => {
-    acc[name] = tokenMap[name].value;
+    acc[name] = tokenMap[name].$value || tokenMap[name].value;
     return acc;
   }, {});
   return JSON.stringify(flatJson, null, 2);
@@ -699,6 +761,131 @@ function createTokens(scale, prefix, primaryData, derivedData) {
   return root;
 }
 
+function generateSemanticFromNeutral(neutralScale) {
+  // neutralScale: array ordered light -> dark, entries: { name, hex }
+  function labelOf(item) {
+    if (!item || !item.name) return null;
+    const m = item.name.match(/(50|100|200|300|500|600|700|800|900|950)/);
+    return m ? m[0] : null;
+  }
+
+  function refForLabel(label) {
+    if (!label) return "{color.seed.white}";
+    return `{color.palettes.neutral.${label}}`;
+  }
+
+  const out = {
+    surface: null,
+    surfaceVariant: null,
+    surfaceInverted: null,
+    surfaceInvertedVariant: null,
+    text: {},
+    outline: {},
+  };
+
+  if (!Array.isArray(neutralScale) || neutralScale.length === 0) return out;
+
+  const first = neutralScale[0];
+  const second = neutralScale[1] || first;
+  const last = neutralScale[neutralScale.length - 1];
+  const last2 = neutralScale[Math.max(0, neutralScale.length - 2)];
+
+  // Surfaces (light values)
+  out.surface = { hex: first.hex, ref: refForLabel(labelOf(first)) };
+  out.surfaceVariant = { hex: second.hex, ref: refForLabel(labelOf(second)) };
+  out.surfaceInverted = { hex: last.hex, ref: refForLabel(labelOf(last)) };
+  out.surfaceInvertedVariant = { hex: last2.hex, ref: refForLabel(labelOf(last2)) };
+
+  // Helpers to find contrast-based candidates
+  function findDarkForBackground(bgHex, thresholds) {
+    // search from darkest to lightest
+    for (let i = neutralScale.length - 1; i >= 0; i--) {
+      const candidate = neutralScale[i];
+      const ratio = getContrastRatio(bgHex, candidate.hex);
+      if (typeof ratio === 'number') {
+        for (let t = 0; t < thresholds.length; t++) {
+          if (ratio >= thresholds[t]) return { hex: candidate.hex, ref: refForLabel(labelOf(candidate)), label: labelOf(candidate) };
+        }
+      }
+    }
+    return null;
+  }
+
+  function findLightForBackground(bgHex, thresholds) {
+    // search from lightest to darkest (for inverted surfaces)
+    for (let i = 0; i < neutralScale.length; i++) {
+      const candidate = neutralScale[i];
+      const ratio = getContrastRatio(bgHex, candidate.hex);
+      if (typeof ratio === 'number') {
+        for (let t = 0; t < thresholds.length; t++) {
+          if (ratio >= thresholds[t]) return { hex: candidate.hex, ref: refForLabel(labelOf(candidate)), label: labelOf(candidate) };
+        }
+      }
+    }
+    return null;
+  }
+
+  // Text thresholds: primary 4.5, secondary 3, tertiary 2.5
+  const primaryTh = [4.5];
+  const secondaryTh = [3];
+  const tertiaryTh = [2.5];
+
+  // For light surfaces: we want dark text -> search dark candidates
+  out.text.primary = findDarkForBackground(out.surface.hex, primaryTh) || { hex: last.hex, ref: refForLabel(labelOf(last)) };
+  out.text.secondary = (function() {
+    // try to find a slightly lighter dark that meets 3:1
+    for (let i = neutralScale.length - 1; i >= 0; i--) {
+      const c = neutralScale[i];
+      const r = getContrastRatio(out.surface.hex, c.hex);
+      if (typeof r === 'number' && r >= 3 && c.hex !== out.text.primary.hex) return { hex: c.hex, ref: refForLabel(labelOf(c)), label: labelOf(c) };
+    }
+    return out.text.primary;
+  })();
+  out.text.tertiary = (function() {
+    for (let i = neutralScale.length - 1; i >= 0; i--) {
+      const c = neutralScale[i];
+      const r = getContrastRatio(out.surface.hex, c.hex);
+      if (typeof r === 'number' && r >= 2.5 && c.hex !== out.text.secondary.hex) return { hex: c.hex, ref: refForLabel(labelOf(c)), label: labelOf(c) };
+    }
+    return out.text.secondary;
+  })();
+
+  // For inverted surfaces (dark backgrounds) we want light text -> search light candidates
+  out.text.primaryInverted = findLightForBackground(out.surfaceInverted.hex, primaryTh) || { hex: first.hex, ref: refForLabel(labelOf(first)) };
+  out.text.secondaryInverted = (function() {
+    for (let i = 0; i < neutralScale.length; i++) {
+      const c = neutralScale[i];
+      const r = getContrastRatio(out.surfaceInverted.hex, c.hex);
+      if (typeof r === 'number' && r >= 3 && c.hex !== out.text.primaryInverted.hex) return { hex: c.hex, ref: refForLabel(labelOf(c)), label: labelOf(c) };
+    }
+    return out.text.primaryInverted;
+  })();
+  out.text.tertiaryInverted = (function() {
+    for (let i = 0; i < neutralScale.length; i++) {
+      const c = neutralScale[i];
+      const r = getContrastRatio(out.surfaceInverted.hex, c.hex);
+      if (typeof r === 'number' && r >= 2.5 && c.hex !== out.text.secondaryInverted.hex) return { hex: c.hex, ref: refForLabel(labelOf(c)), label: labelOf(c) };
+    }
+    return out.text.secondaryInverted;
+  })();
+
+  // Outlines: subtle (1.5), default (3), intense (7)
+  const subtleTh = [1.5];
+  const defaultTh = [3];
+  const intenseTh = [7];
+
+  out.outline.subtle = findDarkForBackground(out.surface.hex, subtleTh) || { hex: out.text.secondary.hex, ref: out.text.secondary.ref };
+  out.outline.default = findDarkForBackground(out.surface.hex, defaultTh) || { hex: out.text.primary.hex, ref: out.text.primary.ref };
+  out.outline.intense = findDarkForBackground(out.surface.hex, intenseTh) || { hex: out.text.primary.hex, ref: out.text.primary.ref };
+
+  // inverted outlines use light candidates
+  out.outline.subtleInverted = findLightForBackground(out.surfaceInverted.hex, subtleTh) || { hex: out.text.secondaryInverted.hex, ref: out.text.secondaryInverted.ref };
+  out.outline.defaultInverted = findLightForBackground(out.surfaceInverted.hex, defaultTh) || { hex: out.text.primaryInverted.hex, ref: out.text.primaryInverted.ref };
+  out.outline.intenseInverted = findLightForBackground(out.surfaceInverted.hex, intenseTh) || { hex: out.text.primaryInverted.hex, ref: out.text.primaryInverted.ref };
+
+  return out;
+}
+
 function generateTokens() {
   const derived = updateDerivedPreview();
   if (!derived) {
@@ -730,14 +917,79 @@ function generateTokens() {
   renderPrimaryColorMatrix(primaryScale, scale);
 
   // Pass primaryData and derived (greyscale) so aliases and scales use correct seeds
-  const tokens = createTokens(scale.concat(primaryScale), prefixInput.value, primaryData, derived);
+  const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived);
+
+  // Determine semantic tokens based on neutral scale
+  const semantic = generateSemanticFromNeutral(scale);
+  // Compute onPrimary (choose darkest neutral or white based on contrast with primary seed)
+  semantic.onPrimary = { ref: '{color.seed.white}', hex: '#FFFFFF', primaryHex: null };
+  try {
+    const primarySeed = primaryScale && primaryScale.find((c) => c.isSeed);
+    const darkestNeutral = scale && scale[scale.length - 1];
+    if (primarySeed) semantic.onPrimary.primaryHex = primarySeed.hex;
+    if (primarySeed && darkestNeutral) {
+      const ratio = getContrastRatio(primarySeed.hex, darkestNeutral.hex);
+      if (typeof ratio === 'number' && ratio >= 4.5) {
+        // use neutral 950 reference if contrast is sufficient
+        const m = darkestNeutral.name && darkestNeutral.name.match(/(50|100|200|300|500|600|700|800|900|950)/);
+        const label = m ? m[0] : '950';
+        semantic.onPrimary.ref = `{color.palettes.neutral.${label}}`;
+        semantic.onPrimary.hex = darkestNeutral.hex;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  // Add semantic tokens to the tokens object
+  const prefixValue = prefixInput ? prefixInput.value : "";
+  const colorKey = prefixValue ? prefixValue.toLowerCase().replace(/[^a-z0-9.-]/g, "").replace(/^\.+|\.+$/g, "") : "color";
+  if (!tokens[colorKey]) tokens[colorKey] = {};
+  if (!tokens[colorKey].semantic) tokens[colorKey].semantic = {};
+
+  // Surface tokens (references)
+  tokens[colorKey].semantic.surface = {
+    surface: { $value: semantic.surface.ref, $type: "color", $description: "Surface" },
+    surfaceVariant: { $value: semantic.surfaceVariant.ref, $type: "color", $description: "Surface variant" },
+    surfaceInverted: { $value: semantic.surfaceInverted.ref, $type: "color", $description: "Surface inverted" },
+    surfaceInvertedVariant: { $value: semantic.surfaceInvertedVariant.ref, $type: "color", $description: "Surface inverted variant" },
+  };
+
+  // Text tokens
+  tokens[colorKey].semantic.text = {
+    textPrimary: { $value: semantic.text.primary.ref, $type: "color", $description: "Primary text on surfaces" },
+    textSecondary: { $value: semantic.text.secondary.ref, $type: "color", $description: "Secondary text on surfaces" },
+    textTertiary: { $value: semantic.text.tertiary.ref, $type: "color", $description: "Tertiary text on surfaces" },
+    textPrimaryInverted: { $value: semantic.text.primaryInverted.ref, $type: "color", $description: "Primary text on inverted surfaces" },
+    textSecondaryInverted: { $value: semantic.text.secondaryInverted.ref, $type: "color", $description: "Secondary text on inverted surfaces" },
+    textTertiaryInverted: { $value: semantic.text.tertiaryInverted.ref, $type: "color", $description: "Tertiary text on inverted surfaces" },
+  };
+
+  // Outline tokens
+  tokens[colorKey].semantic.outline = {
+    default: { $value: semantic.outline.default.ref, $type: "color", $description: "Default outline" },
+    subtle: { $value: semantic.outline.subtle.ref, $type: "color", $description: "Subtle outline" },
+    intense: { $value: semantic.outline.intense.ref, $type: "color", $description: "Intense outline" },
+    defaultInverted: { $value: semantic.outline.defaultInverted.ref, $type: "color", $description: "Default outline (inverted)" },
+    subtleInverted: { $value: semantic.outline.subtleInverted.ref, $type: "color", $description: "Subtle outline (inverted)" },
+    intenseInverted: { $value: semantic.outline.intenseInverted.ref, $type: "color", $description: "Intense outline (inverted)" },
+  };
+
+  // onPrimary semantic token (reference)
+  tokens[colorKey].semantic.onPrimary = {
+    $value: semantic.onPrimary.ref,
+    $type: "color",
+    $description: "Foreground color to use on primary backgrounds",
+  };
+
+  // Render live semantic preview
+  renderSemanticPreview(semantic, scale);
 
   // Count leaves in the nested W3C tokens object
   function countLeaves(obj) {
     let count = 0;
     Object.keys(obj || {}).forEach((key) => {
       const val = obj[key];
-      if (val && typeof val === "object" && Object.prototype.hasOwnProperty.call(val, "value")) {
+      if (val && typeof val === "object" && (Object.prototype.hasOwnProperty.call(val, "$value") || Object.prototype.hasOwnProperty.call(val, "value"))) {
         count += 1;
       } else if (val && typeof val === "object") {
         count += countLeaves(val);
@@ -748,7 +1000,8 @@ function generateTokens() {
 
   const total = countLeaves(tokens);
   tokenCount.textContent = total.toString();
-  output.value = formatTokens(tokens, formatSelect.value);
+  const format = formatSelect ? formatSelect.value : "json";
+  output.value = formatTokens(tokens, format);
   copyBtn.disabled = total === 0;
 }
 
@@ -848,8 +1101,8 @@ resetBtn.addEventListener("click", () => {
   currentTintLevel = "low";
   currentTintColorMode = "primary";
   satInput.value = Math.round(tintAmounts.low * 100) / 100;
-  prefixInput.value = "";
-  formatSelect.value = "json";
+  if (prefixInput) prefixInput.value = "";
+  if (formatSelect) formatSelect.value = "json";
   complianceLevel.value = "AA";
   output.value = "";
   copyBtn.disabled = true;

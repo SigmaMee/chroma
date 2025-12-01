@@ -143,6 +143,62 @@
           Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
         </p>
 
+      </section>
+
+      <section class="card semantic-preview-card">
+        <div class="status">
+          <span>Semantic preview</span>
+          <span class="pill">Live</span>
+        </div>
+        <div id="semantic-preview" class="semantic-preview">
+          <div class="sample-row">
+            <div class="sample-card" id="sample-surface">
+              <div class="sample-surface-label">Surface</div>
+              <div class="sample-surface-content">
+                <div class="text text-primary">Text primary</div>
+                <div class="text text-secondary">Text secondary</div>
+                <div class="text text-tertiary">Text tertiary</div>
+              </div>
+            </div>
+            <div class="sample-card" id="sample-surface-variant">
+              <div class="sample-surface-label">Surface Variant</div>
+              <div class="sample-surface-content">
+                <div class="text text-primary">Text primary</div>
+                <div class="text text-secondary">Text secondary</div>
+                <div class="text text-tertiary">Text tertiary</div>
+              </div>
+            </div>
+            <div class="sample-card" id="sample-surface-inverted">
+              <div class="sample-surface-label">Surface Inverted</div>
+              <div class="sample-surface-content">
+                <div class="text text-primary-inv">Text primary</div>
+                <div class="text text-secondary-inv">Text secondary</div>
+                <div class="text text-tertiary-inv">Text tertiary</div>
+              </div>
+            </div>
+          </div>
+          <div class="sample-row">
+            <div class="sample-outline" id="sample-outline-default">Outline Default</div>
+            <div class="sample-outline" id="sample-outline-subtle">Outline Subtle</div>
+            <div class="sample-outline" id="sample-outline-intense">Outline Intense</div>
+          </div>
+          </div>
+          <div class="sample-row">
+            <div class="sample-card sample-primary" id="sample-primary">
+              <div class="sample-surface-label">Primary</div>
+              <div class="sample-surface-content">
+                <div class="text text-on-primary">Primary / onPrimary</div>
+                <div class="text text-on-primary-sub">Sample UI text</div>
+              </div>
+            </div>
+            <div class="sample-card sample-primary-contrast" id="sample-primary-contrast">
+              <div class="sample-surface-label">onPrimary color</div>
+              <div class="sample-surface-content">
+                <div class="text text-on-primary-hex" id="sample-on-primary-hex">#FFFFFF</div>
+              </div>
+            </div>
+          </div>
+
       <section class="card actions">
         <button class="primary" id="generate">Generate tokens</button>
         <button id="copy" disabled>Copy output</button>
