@@ -152,6 +152,36 @@ textarea {
   max-width: 70px;
 }
 
+.switch-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tint-switch {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.tint-switch:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.tint-switch.active {
+  background: var(--accent);
+  color: #05060a;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 .status {
   display: flex;
   justify-content: space-between;

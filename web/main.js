@@ -1,9 +1,23 @@
 const primaryInput = document.getElementById("primaryColor");
 const primarySwatch = document.getElementById("primarySwatch");
 const primaryColorPicker = document.getElementById("primaryColorPicker");
-const satRange = document.getElementById("greyscaleSaturation");
 const satInput = document.getElementById("greyscaleSaturationValue");
 const formatSelect = document.getElementById("format");
+
+// Tint amount switch variables
+let tintAmounts = {
+  low: 0,
+  mid: 0,
+  high: 0,
+};
+let currentTintLevel = "low";
+let currentTintColorMode = "primary";
+
+function generateRandomTintAmounts() {
+  tintAmounts.low = 1 + Math.random() * 0.4;
+  tintAmounts.mid = 9 + Math.random() * 0.5;
+  tintAmounts.high = 16 + Math.random() * 0.65;
+}
 const prefixInput = document.getElementById("prefix");
 const derivedHexInput = document.getElementById("derivedHex");
 const derivedSwatch = document.getElementById("derivedSwatch");
@@ -15,6 +29,9 @@ const primaryScaleCount = document.getElementById("primary-scale-count");
 const matrixGrid = document.getElementById("matrix-grid");
 const matrixPassCount = document.getElementById("matrix-pass-count");
 const matrixNote = document.getElementById("matrix-note");
+const primaryMatrixGrid = document.getElementById("primary-matrix-grid");
+const primaryMatrixPassCount = document.getElementById("primary-matrix-pass-count");
+const primaryMatrixNote = document.getElementById("primary-matrix-note");
 const complianceLevel = document.getElementById("complianceLevel");
 const output = document.getElementById("output");
 const generateBtn = document.getElementById("generate");
@@ -131,7 +148,7 @@ function hslToRgb(h, s, l) {
   };
 }
 
-function deriveGreyscaleColor(primaryHex, saturationPercent) {
+function deriveGreyscaleColor(primaryHex, saturationPercent, tintMode = "primary") {
   const normalized = normalizeHex(primaryHex);
   if (!normalized) {
     return null;
@@ -140,7 +157,13 @@ function deriveGreyscaleColor(primaryHex, saturationPercent) {
   if (!rgb) {
     return null;
   }
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  
+  // If complimentary mode, shift hue by 180 degrees
+  if (tintMode === "complimentary") {
+    hsl = { ...hsl, h: (hsl.h - 180 + 360) % 360 };
+  }
+  
   const saturation = clamp(Number(saturationPercent) / 100 || 0, 0, 0.3);
   const derivedRgb = hslToRgb(hsl.h, saturation, hsl.l);
   return {
@@ -429,10 +452,17 @@ function renderPrimaryScale(scale) {
 
 function renderMatrix(scale) {
   const colors = Array.isArray(scale) ? scale : [];
+  
+  // Add white at the beginning of the test colors
+  const testColors = [
+    { name: "white", hex: "#FFFFFF" },
+    ...colors
+  ];
+  
   matrixGrid.innerHTML = "";
   matrixPassCount.textContent = "0";
 
-  if (!colors.length) {
+  if (!testColors.length) {
     const placeholder = document.createElement("p");
     placeholder.className = "helper";
     placeholder.textContent = "Generate tokens to evaluate combinations.";
@@ -448,14 +478,14 @@ function renderMatrix(scale) {
   matrixNote.textContent = `Rows are backgrounds, columns are foregrounds. Green = passes ${normalThreshold}:1 (normal text), Blue = passes ${largeThreshold}:1 (large text only), Red = fails.`;
 
   matrixGrid.style.gridTemplateColumns = `repeat(${
-    colors.length + 1
+    testColors.length + 1
   }, minmax(70px, 1fr))`;
 
   const headerCell = document.createElement("div");
   headerCell.className = "matrix-cell header";
   matrixGrid.appendChild(headerCell);
 
-  colors.forEach((color) => {
+  testColors.forEach((color) => {
     const cell = document.createElement("div");
     cell.className = "matrix-cell header";
     cell.textContent = color.name.replace("greyscale.scale.", "neutral.");
@@ -465,13 +495,13 @@ function renderMatrix(scale) {
   let passStrongCount = 0;
   let passWeakCount = 0;
 
-  colors.forEach((bg) => {
+  testColors.forEach((bg) => {
     const rowHeader = document.createElement("div");
     rowHeader.className = "matrix-cell header";
     rowHeader.textContent = bg.name.replace("greyscale.scale.", "neutral.");
     matrixGrid.appendChild(rowHeader);
 
-    colors.forEach((fg) => {
+    testColors.forEach((fg) => {
       const ratio = getContrastRatio(bg.hex, fg.hex);
       let cellClass = "fail";
       if (typeof ratio === "number") {
@@ -494,10 +524,83 @@ function renderMatrix(scale) {
   matrixPassCount.textContent = `${passStrongCount} strong / ${passWeakCount} weak`;
 }
 
+function renderPrimaryColorMatrix(primaryScale, neutralScale) {
+  // Primary colors as backgrounds, neutral + white as foregrounds
+  const backgrounds = Array.isArray(primaryScale) ? primaryScale : [];
+  const foregrounds = [
+    { name: "white", hex: "#FFFFFF" },
+    ...(Array.isArray(neutralScale) ? neutralScale : [])
+  ];
+  
+  primaryMatrixGrid.innerHTML = "";
+  primaryMatrixPassCount.textContent = "0";
+
+  if (!backgrounds.length || !foregrounds.length) {
+    const placeholder = document.createElement("p");
+    placeholder.className = "helper";
+    placeholder.textContent = "Generate tokens to evaluate combinations.";
+    primaryMatrixGrid.appendChild(placeholder);
+    primaryMatrixGrid.style.gridTemplateColumns = "1fr";
+    return;
+  }
+
+  const level = complianceLevel.value;
+  const normalThreshold = level === "AAA" ? 7 : 4.5;
+  const largeThreshold = level === "AAA" ? 4.5 : 3;
+
+  primaryMatrixNote.textContent = `Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes ${normalThreshold}:1 (normal text), Blue = passes ${largeThreshold}:1 (large text only), Red = fails.`;
+
+  primaryMatrixGrid.style.gridTemplateColumns = `repeat(${
+    foregrounds.length + 1
+  }, minmax(70px, 1fr))`;
+
+  const headerCell = document.createElement("div");
+  headerCell.className = "matrix-cell header";
+  primaryMatrixGrid.appendChild(headerCell);
+
+  foregrounds.forEach((color) => {
+    const cell = document.createElement("div");
+    cell.className = "matrix-cell header";
+    cell.textContent = color.name.replace("greyscale.scale.", "neutral.");
+    primaryMatrixGrid.appendChild(cell);
+  });
+
+  let passStrongCount = 0;
+  let passWeakCount = 0;
+
+  backgrounds.forEach((bg) => {
+    const rowHeader = document.createElement("div");
+    rowHeader.className = "matrix-cell header";
+    rowHeader.textContent = bg.name.replace("color.primary.", "primary.");
+    primaryMatrixGrid.appendChild(rowHeader);
+
+    foregrounds.forEach((fg) => {
+      const ratio = getContrastRatio(bg.hex, fg.hex);
+      let cellClass = "fail";
+      if (typeof ratio === "number") {
+        if (ratio >= normalThreshold) {
+          cellClass = "pass-strong";
+          passStrongCount += 1;
+        } else if (ratio >= largeThreshold) {
+          cellClass = "pass-weak";
+          passWeakCount += 1;
+        }
+      }
+
+      const cell = document.createElement("div");
+      cell.className = `matrix-cell ${cellClass}`;
+      cell.textContent = typeof ratio === "number" ? `${ratio.toFixed(1)}×` : "—";
+      primaryMatrixGrid.appendChild(cell);
+    });
+  });
+
+  primaryMatrixPassCount.textContent = `${passStrongCount} strong / ${passWeakCount} weak`;
+}
+
 function updateDerivedPreview() {
   const normalized = normalizeHex(primaryInput.value);
   primarySwatch.style.background = normalized || "#222";
-  const derived = deriveGreyscaleColor(primaryInput.value, satInput.value);
+  const derived = deriveGreyscaleColor(primaryInput.value, satInput.value, currentTintColorMode);
   if (!derived) {
     derivedHexInput.value = "";
     derivedSwatch.style.background = "#222";
@@ -544,6 +647,13 @@ function createTokens(scale, prefix, primaryData, derivedData) {
       $description: "Neutral seed color",
     };
   }
+
+  // Add white seed color
+  root[colorKey].seed.white = {
+    $value: "#FFFFFF",
+    $type: "color",
+    $description: "White seed color",
+  };
 
   // Add palettes (primary and neutral scales)
   root[colorKey].palettes = root[colorKey].palettes || {};
@@ -616,6 +726,8 @@ function generateTokens() {
   renderPrimaryScale(primaryScale);
   // Matrix should only use the greyscale combinations
   renderMatrix(scale);
+  // Render primary color matrix with neutral + white as foregrounds
+  renderPrimaryColorMatrix(primaryScale, scale);
 
   // Pass primaryData and derived (greyscale) so aliases and scales use correct seeds
   const tokens = createTokens(scale.concat(primaryScale), prefixInput.value, primaryData, derived);
@@ -651,7 +763,7 @@ if (primaryColorPicker) {
   primaryColorPicker.addEventListener("input", (e) => {
     const color = e.target.value.toUpperCase();
     primaryInput.value = color;
-    updateDerivedPreview();
+    generateTokens();
   });
 }
 
@@ -660,28 +772,54 @@ primaryInput.addEventListener("input", () => {
   if (normalized && primaryColorPicker) {
     primaryColorPicker.value = normalized;
   }
-  updateDerivedPreview();
+  generateTokens();
 });
 
-satRange.addEventListener("input", (event) => {
-  satInput.value = event.target.value;
-  updateDerivedPreview();
+// Tint amount switch listeners
+const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
+tintAmountSwitches.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    // Remove active class from all amount buttons
+    tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
+    // Add active class to clicked button
+    event.target.classList.add("active");
+    // Update current tint level
+    currentTintLevel = event.target.dataset.value;
+    // Update hidden saturation input with calculated value
+    satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
+    // Generate tokens
+    generateTokens();
+  });
 });
 
-satInput.addEventListener("input", (event) => {
-  const clamped = clamp(event.target.value, 0, 30);
-  satInput.value = clamped;
-  satRange.value = clamped;
-  updateDerivedPreview();
+// Tint color switch listeners
+const tintColorSwitches = document.querySelectorAll("#tintColorSwitch-primary, #tintColorSwitch-complimentary");
+tintColorSwitches.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    // Remove active class from all color buttons
+    tintColorSwitches.forEach((btn) => btn.classList.remove("active"));
+    // Add active class to clicked button
+    event.target.classList.add("active");
+    // Update current tint color mode
+    currentTintColorMode = event.target.dataset.value;
+    // Generate tokens
+    generateTokens();
+  });
 });
 
 generateBtn.addEventListener("click", generateTokens);
 
 complianceLevel.addEventListener("change", () => {
-  const derived = deriveGreyscaleColor(primaryInput.value, satInput.value);
+  const primary = normalizeHex(primaryInput.value);
+  const saturation = clamp(Number(satInput.value) || 0, 0, 30);
+  const derived = deriveGreyscaleColor(primary, saturation, currentTintColorMode);
   if (derived) {
     const gScale = generateGreyscaleScale(derived);
     renderMatrix(gScale);
+    // Also render primary color matrix
+    const primaryData = { hex: primary, hsl: rgbToHsl(...Object.values(hexToRgb(primary) || {})), saturation: 1 };
+    const primaryScale = generatePrimaryScale(primaryData);
+    renderPrimaryColorMatrix(primaryScale, gScale);
   } else {
     renderMatrix();
   }
@@ -707,8 +845,9 @@ resetBtn.addEventListener("click", () => {
   if (primaryColorPicker) {
     primaryColorPicker.value = "#3366FF";
   }
-  satRange.value = "8";
-  satInput.value = "8";
+  currentTintLevel = "low";
+  currentTintColorMode = "primary";
+  satInput.value = Math.round(tintAmounts.low * 100) / 100;
   prefixInput.value = "";
   formatSelect.value = "json";
   complianceLevel.value = "AA";
@@ -718,10 +857,20 @@ resetBtn.addEventListener("click", () => {
   derivedHexInput.value = "";
   derivedSwatch.style.background = "#222";
   derivedLabel.textContent = "—";
+  // Update tint amount switch UI
+  tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
+  document.getElementById("tintAmountSwitch-low").classList.add("active");
+  // Update tint color switch UI
+  tintColorSwitches.forEach((btn) => btn.classList.remove("active"));
+  document.getElementById("tintColorSwitch-primary").classList.add("active");
   renderScale();
   renderPrimaryScale();
   renderMatrix();
 });
+
+// Generate random tint amounts on app load
+generateRandomTintAmounts();
+satInput.value = Math.round(tintAmounts.low * 100) / 100;
 
 // Ensure the primary input and color picker are synchronized on load
 const _initialPrimary = normalizeHex(primaryInput && primaryInput.value ? primaryInput.value : "");

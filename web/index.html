@@ -37,21 +37,32 @@
           </p>
         </div>
         <div>
-          <label for="greyscaleSaturation">
-            Greyscale saturation (%)
-            <span class="helper">(0 = neutral, max 30)</span>
+          <label for="tintAmountSwitch">
+            Tint amount (%)
+            <span class="helper">(Low, Mid, or High)</span>
           </label>
-          <div class="range-row">
-            <input type="range" id="greyscaleSaturation" min="0" max="30" value="8" />
-            <input
-              type="number"
-              id="greyscaleSaturationValue"
-              min="0"
-              max="30"
-              value="8"
-            />
+          <div class="switch-row">
+            <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
+            <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
+            <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
+          </div>
+          <input
+            type="hidden"
+            id="greyscaleSaturationValue"
+            value="8"
+          />
+        </div>
+        <div>
+          <label for="tintColorSwitch">
+            Tint color
+            <span class="helper">(Primary or Complimentary)</span>
+          </label>
+          <div class="switch-row">
+            <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
+            <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
           </div>
         </div>
+        <!-- 
         <div>
           <label for="format">Output format</label>
           <select id="format">
@@ -66,6 +77,7 @@
           </label>
           <input id="prefix" placeholder="colour" />
         </div>
+        -->
       </section>
 
       <section class="card derived">
@@ -118,6 +130,18 @@
           Rows are backgrounds, columns are foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
         </p>
       </section>
+
+      <section class="card">
+        <div class="status">
+          <span>Primary color contrast matrix (background × foreground)</span>
+          <span class="pill" id="primary-matrix-pass-count">0</span>
+        </div>
+        <div class="matrix-grid" id="primary-matrix-grid">
+          <p class="helper">Generate tokens to evaluate combinations.</p>
+        </div>
+        <p class="matrix-note" id="primary-matrix-note">
+          Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+        </p>
 
       <section class="card actions">
         <button class="primary" id="generate">Generate tokens</button>
