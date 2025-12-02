@@ -19,203 +19,168 @@
         <div class="badge">Web</div>
       </header>
 
-      <section class="card options">
-        <div>
-          <label for="primaryColor">Primary colour (hex)</label>
-          <div class="color-input">
-            <input
-              id="primaryColor"
-              value="#3366FF"
-              maxlength="7"
-              placeholder="#3366FF"
-            />
-            <span class="swatch" id="primarySwatch"></span>
-            <input type="color" id="primaryColorPicker" value="#3366FF" />
-          </div>
-          <p class="helper">
-            Hue & lightness seed the greyscale. Saturation caps at 30%.
-          </p>
-        </div>
-        <div>
-          <label for="tintAmountSwitch">
-            Tint amount (%)
-            <span class="helper">(Low, Mid, or High)</span>
-          </label>
-          <div class="switch-row">
-            <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
-            <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
-            <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
-          </div>
-          <input
-            type="hidden"
-            id="greyscaleSaturationValue"
-            value="8"
-          />
-        </div>
-        <div>
-          <label for="tintColorSwitch">
-            Tint color
-            <span class="helper">(Primary or Complimentary)</span>
-          </label>
-          <div class="switch-row">
-            <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
-            <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
-          </div>
-        </div>
-        <!-- 
-        <div>
-          <label for="format">Output format</label>
-          <select id="format">
-            <option value="json">JSON tokens</option>
-            <option value="css">CSS custom properties</option>
-          </select>
-        </div>
-        <div>
-          <label for="prefix">
-            Token prefix
-            <span class="helper">(Optional, e.g. <code>color</code>)</span>
-          </label>
-          <input id="prefix" placeholder="colour" />
-        </div>
-        -->
-      </section>
-
-      <section class="card derived">
-        <div class="status">
-          <span>Derived greyscale</span>
-          <span class="pill" id="derivedLabel">—</span>
-        </div>
-        <div class="color-input">
-          <input id="derivedHex" readonly placeholder="#000000" />
-          <span class="swatch" id="derivedSwatch"></span>
-        </div>
-      </section>
-
-      <section class="card scale-card">
-        <div class="status">
-          <span>Greyscale scale (10 steps)</span>
-          <span class="pill" id="scale-count">0</span>
-        </div>
-        <div class="scale-grid" id="scale-grid">
-          <p class="helper">Generate tokens to preview the scale.</p>
-        </div>
-      </section>
-
-      <section class="card scale-card primary-scale-card">
-        <div class="status">
-          <span>Primary color scale (10 steps)</span>
-          <span class="pill" id="primary-scale-count">0</span>
-        </div>
-        <div class="scale-grid" id="primary-scale-grid">
-          <p class="helper">Generate tokens to preview the primary color scale.</p>
-        </div>
-      </section>
-
-      <section class="card matrix-card">
-        <div class="status">
-          <span>WCAG contrast matrix (background × foreground)</span>
-          <span class="pill" id="matrix-pass-count">0</span>
-        </div>
-        <div>
-          <label for="complianceLevel">Compliance level</label>
-          <select id="complianceLevel">
-            <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
-            <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
-          </select>
-        </div>
-        <div class="matrix-grid" id="matrix-grid">
-          <p class="helper">Generate tokens to evaluate combinations.</p>
-        </div>
-        <p class="matrix-note" id="matrix-note">
-          Rows are backgrounds, columns are foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
-        </p>
-      </section>
-
-      <section class="card">
-        <div class="status">
-          <span>Primary color contrast matrix (background × foreground)</span>
-          <span class="pill" id="primary-matrix-pass-count">0</span>
-        </div>
-        <div class="matrix-grid" id="primary-matrix-grid">
-          <p class="helper">Generate tokens to evaluate combinations.</p>
-        </div>
-        <p class="matrix-note" id="primary-matrix-note">
-          Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
-        </p>
-
-      </section>
-
-      <section class="card semantic-preview-card">
-        <div class="status">
-          <span>Semantic preview</span>
-          <span class="pill">Live</span>
-        </div>
-        <div id="semantic-preview" class="semantic-preview">
-          <div class="sample-row">
-            <div class="sample-card" id="sample-surface">
-              <div class="sample-surface-label">Surface</div>
-              <div class="sample-surface-content">
-                <div class="text text-primary">Text primary</div>
-                <div class="text text-secondary">Text secondary</div>
-                <div class="text text-tertiary">Text tertiary</div>
+      <div class="layout-container">
+        <!-- Row 1: Inputs & Actions -->
+        <div class="top-row card">
+          <section class="options">
+            <div>
+              <label for="primaryColor">Primary colour (hex)</label>
+              <div class="color-input">
+                <input
+                  id="primaryColor"
+                  value="#3366FF"
+                  maxlength="7"
+                  placeholder="#3366FF"
+                />
+                <span class="swatch" id="primarySwatch"></span>
+                <input type="color" id="primaryColorPicker" value="#3366FF" />
+              </div>
+              <p class="helper">
+                Hue & lightness seed the greyscale. Saturation caps at 30%.
+              </p>
+            </div>
+            <div>
+              <label for="tintAmountSwitch">
+                Tint amount (%)
+                <span class="helper">(Low, Mid, or High)</span>
+              </label>
+              <div class="switch-row">
+                <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
+                <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
+                <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
+              </div>
+              <input
+                type="hidden"
+                id="greyscaleSaturationValue"
+                value="8"
+              />
+            </div>
+            <div>
+              <label for="tintColorSwitch">
+                Tint color
+                <span class="helper">(Primary or Complimentary)</span>
+              </label>
+              <div class="switch-row">
+                <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
+                <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
               </div>
             </div>
-            <div class="sample-card" id="sample-surface-variant">
-              <div class="sample-surface-label">Surface Variant</div>
-              <div class="sample-surface-content">
-                <div class="text text-primary">Text primary</div>
-                <div class="text text-secondary">Text secondary</div>
-                <div class="text text-tertiary">Text tertiary</div>
-              </div>
+          </section>
+
+          <section class="derived">
+            <div class="status">
+              <span>Derived greyscale</span>
+              <span class="pill" id="derivedLabel">—</span>
             </div>
-            <div class="sample-card" id="sample-surface-inverted">
-              <div class="sample-surface-label">Surface Inverted</div>
-              <div class="sample-surface-content">
-                <div class="text text-primary-inv">Text primary</div>
-                <div class="text text-secondary-inv">Text secondary</div>
-                <div class="text text-tertiary-inv">Text tertiary</div>
-              </div>
+            <div class="color-input">
+              <input id="derivedHex" readonly placeholder="#000000" />
+              <span class="swatch" id="derivedSwatch"></span>
             </div>
-          </div>
-          <div class="sample-row">
-            <div class="sample-outline" id="sample-outline-default">Outline Default</div>
-            <div class="sample-outline" id="sample-outline-subtle">Outline Subtle</div>
-            <div class="sample-outline" id="sample-outline-intense">Outline Intense</div>
-          </div>
-          </div>
-          <div class="sample-row">
-            <div class="sample-card sample-primary" id="sample-primary">
-              <div class="sample-surface-label">Primary</div>
-              <div class="sample-surface-content">
-                <div class="text text-on-primary">Primary / onPrimary</div>
-                <div class="text text-on-primary-sub">Sample UI text</div>
+          </section>
+
+          <section class="actions">
+            <button class="primary" id="generate">Generate tokens</button>
+            <button id="reset">Reset</button>
+          </section>
+        </div>
+
+        <!-- Row 2: Two columns -->
+        <div class="bottom-row">
+          <!-- Column 1: Scales & Matrices -->
+          <div class="column column-1">
+            <section class="card scale-card">
+              <div class="status">
+                <span>Greyscale scale (10 steps)</span>
+                <span class="pill" id="scale-count">0</span>
               </div>
-            </div>
-            <div class="sample-card sample-primary-contrast" id="sample-primary-contrast">
-              <div class="sample-surface-label">onPrimary color</div>
-              <div class="sample-surface-content">
-                <div class="text text-on-primary-hex" id="sample-on-primary-hex">#FFFFFF</div>
+              <div class="scale-grid" id="scale-grid">
+                <p class="helper">Generate tokens to preview the scale.</p>
+              </div>
+            </section>
+
+            <section class="card scale-card primary-scale-card">
+              <div class="status">
+                <span>Primary color scale (10 steps)</span>
+                <span class="pill" id="primary-scale-count">0</span>
+              </div>
+              <div class="scale-grid" id="primary-scale-grid">
+                <p class="helper">Generate tokens to preview the primary color scale.</p>
+              </div>
+            </section>
+
+            <section class="card matrix-card">
+              <div class="status">
+                <span>WCAG contrast matrix (background × foreground)</span>
+                <span class="pill" id="matrix-pass-count">0</span>
+              </div>
+              <div>
+                <label for="complianceLevel">Compliance level</label>
+                <select id="complianceLevel">
+                  <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
+                  <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
+                </select>
+              </div>
+              <div class="matrix-grid" id="matrix-grid">
+                <p class="helper">Generate tokens to evaluate combinations.</p>
+              </div>
+              <p class="matrix-note" id="matrix-note">
+                Rows are backgrounds, columns are foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+              </p>
+            </section>
+
+            <section class="card">
+              <div class="status">
+                <span>Primary color contrast matrix (background × foreground)</span>
+                <span class="pill" id="primary-matrix-pass-count">0</span>
+              </div>
+              <div class="matrix-grid" id="primary-matrix-grid">
+                <p class="helper">Generate tokens to evaluate combinations.</p>
+              </div>
+              <p class="matrix-note" id="primary-matrix-note">
+                Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+              </p>
+            </section>
+          </div>
+
+          <!-- Column 2: Tabs (Preview / JSON Output) -->
+          <div class="column column-2">
+            <div class="tabs-container">
+              <div class="tabs-header">
+                <button class="tab-button active" data-tab="preview">Preview</button>
+                <button class="tab-button" data-tab="output">JSON Output</button>
+              </div>
+
+              <!-- Preview Tab -->
+              <div class="tab-content active" id="preview-tab">
+                <section class="card">
+                  <div class="status">
+                    <span>Preview</span>
+                  </div>
+                  <p class="helper">Preview content will be added here.</p>
+                </section>
+              </div>
+
+              <!-- JSON Output Tab -->
+              <div class="tab-content" id="output-tab">
+                <section class="card">
+                  <div class="status">
+                    <span>Token output</span>
+                    <span class="pill" id="token-count">0</span>
+                  </div>
+                  <textarea
+                    id="output"
+                    placeholder="Generate tokens to view JSON output."
+                    readonly
+                  ></textarea>
+                  <div class="card actions">
+                    <button id="copy" disabled>Copy output</button>
+                  </div>
+                </section>
               </div>
             </div>
           </div>
-
-      <section class="card actions">
-        <button class="primary" id="generate">Generate tokens</button>
-        <button id="copy" disabled>Copy output</button>
-        <button id="reset">Reset</button>
-      </section>
-
-      <section class="card">
-        <div class="status">
-          <span>Token output</span>
-          <span class="pill" id="token-count">0</span>
         </div>
-        <textarea
-          id="output"
-          placeholder="Generate tokens to view JSON or CSS output."
-          readonly
-        ></textarea>
-      </section>
+      </div>
 
       <footer>
         <p>
