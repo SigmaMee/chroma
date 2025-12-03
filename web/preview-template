@@ -28,13 +28,13 @@
            margin-top: 8px;
          }
          .surface {
-           background-color: var(--semantic-surface-neutral-surface);
+           background-color: var(--semantic-surface-neutral-surfaceDefault);
            padding: 16px;
            border-radius: 8px;
          }
 
          .baseSurface {
-           background-color: var(--semantic-surface-neutral-base);
+           background-color: var(--semantic-surface-neutral-surface);
            padding: 16px;
            border-radius: 8px;
          }

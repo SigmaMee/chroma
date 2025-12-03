@@ -2,89 +2,211 @@
   "color": {
     "seed": {
       "primary": {
-        "$value": "#3366FF",
         "$type": "color",
+        "$value": "#3366FF",
         "$description": "Primary seed color"
       },
       "neutral": {
-        "$value": "#9E9E9E",
         "$type": "color",
+        "$value": "#98989A",
         "$description": "Neutral seed color"
       },
       "white": {
-        "$value": "#FFFFFF",
         "$type": "color",
+        "$value": "#FFFFFF",
         "$description": "White seed color"
       }
     },
     "palettes": {
       "primary": {
-        "50": { "$value": "#EBF2FF", "$type": "color" },
-        "100": { "$value": "#D7E5FF", "$type": "color" },
-        "200": { "$value": "#AECBFF", "$type": "color" },
-        "300": { "$value": "#85B1FF", "$type": "color" },
-        "500": { "$value": "{color.seed.primary}", "$type": "color" },
-        "600": { "$value": "#2B4ECF", "$type": "color" },
-        "700": { "$value": "#223FA1", "$type": "color" },
-        "800": { "$value": "#193074", "$type": "color" },
-        "900": { "$value": "#0F2147", "$type": "color" },
-        "950": { "$value": "#0B1729", "$type": "color" }
+        "50": {
+          "$type": "color",
+          "$value": "#D6E0FF"
+        },
+        "100": {
+          "$type": "color",
+          "$value": "#ADC2FF"
+        },
+        "200": {
+          "$type": "color",
+          "$value": "#85A3FF"
+        },
+        "300": {
+          "$type": "color",
+          "$value": "#5C85FF"
+        },
+        "500": {
+          "$type": "color",
+          "$value": "{color.seed.primary}"
+        },
+        "600": {
+          "$type": "color",
+          "$value": "#0040FF"
+        },
+        "700": {
+          "$type": "color",
+          "$value": "#0033CC"
+        },
+        "800": {
+          "$type": "color",
+          "$value": "#002699"
+        },
+        "900": {
+          "$type": "color",
+          "$value": "#001A66"
+        },
+        "950": {
+          "$type": "color",
+          "$value": "#000D33"
+        }
       },
       "neutral": {
-        "50": { "$value": "#F5F5F5", "$type": "color" },
-        "100": { "$value": "#EEEEEE", "$type": "color" },
-        "200": { "$value": "#E0E0E0", "$type": "color" },
-        "300": { "$value": "#BDBDBD", "$type": "color" },
-        "500": { "$value": "{color.seed.neutral}", "$type": "color" },
-        "600": { "$value": "#757575", "$type": "color" },
-        "700": { "$value": "#616161", "$type": "color" },
-        "800": { "$value": "#424242", "$type": "color" },
-        "900": { "$value": "#212121", "$type": "color" },
-        "950": { "$value": "#0F0F0F", "$type": "color" }
+        "50": {
+          "$type": "color",
+          "$value": "#EAEAEB"
+        },
+        "100": {
+          "$type": "color",
+          "$value": "#D6D6D7"
+        },
+        "200": {
+          "$type": "color",
+          "$value": "#C1C1C2"
+        },
+        "300": {
+          "$type": "color",
+          "$value": "#ACADAE"
+        },
+        "500": {
+          "$type": "color",
+          "$value": "{color.seed.neutral}"
+        },
+        "600": {
+          "$type": "color",
+          "$value": "#7E7F81"
+        },
+        "700": {
+          "$type": "color",
+          "$value": "#656567"
+        },
+        "800": {
+          "$type": "color",
+          "$value": "#4C4C4D"
+        },
+        "900": {
+          "$type": "color",
+          "$value": "#323334"
+        },
+        "950": {
+          "$type": "color",
+          "$value": "#19191A"
+        }
       }
     },
     "semantic": {
       "surface": {
         "neutral": {
-          "base": { "$value": "{color.seed.white}", "$type": "color" },
-          "surface": { "$value": "{color.palettes.neutral.50}", "$type": "color" },
-          "surfaceVariant": { "$value": "{color.palettes.neutral.100}", "$type": "color" },
-          "surfaceInverted": { "$value": "{color.palettes.neutral.950}", "$type": "color" },
-          "surfaceInvertedVariant": { "$value": "{color.palettes.neutral.900}", "$type": "color" }
+          "surfaceBase": {
+            "$type": "color",
+            "$value": "{color.seed.white}"
+          },
+          "surfaceDefault": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.50}"
+          },
+          "surfaceVariant": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.100}"
+          },
+          "surfaceInverted": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.950}"
+          },
+          "surfaceInvertedVariant": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.900}"
+          }
         },
         "primary": {
-          "surfacePrimary": { "$value": "{color.seed.primary}", "$type": "color" },
-          "surfacePrimarySubtle": { "$value": "{color.palettes.primary.100}", "$type": "color" },
-          "primarySurfaceIntense": { "$value": "{color.palettes.primary.700}", "$type": "color" }
+          "surfacePrimary": {
+            "$type": "color",
+            "$value": "{color.seed.primary}"
+          },
+          "surfacePrimarySubtle": {
+            "$type": "color",
+            "$value": "{color.palettes.primary.200}"
+          },
+          "surfacePrimaryIntense": {
+            "$type": "color",
+            "$value": "{color.palettes.primary.700}"
+          }
         }
       },
       "outline": {
         "neutral": {
-          "default": { "$value": "{color.palettes.neutral.800}", "$type": "color" },
-          "variant": { "$value": "{color.palettes.neutral.600}", "$type": "color" },
-          "inverted": {
-            "default": { "$value": "{color.palettes.neutral.100}", "$type": "color" },
-            "variant": { "$value": "{color.palettes.neutral.300}", "$type": "color" }
+          "outlineDefault": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.950}"
+          },
+          "outlineVariant": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.900}"
+          },
+          "outlineInverse": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.50}"
+          },
+          "outlineInverseVariant": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.100}"
           }
         },
         "primary": {
-          "outlinePrimary": { "$value": "{color.seed.primary}", "$type": "color" },
-          "outlinePrimarySubtle": { "$value": "{color.palettes.primary.100}", "$type": "color" },
-          "primaryOutlineIntense": { "$value": "{color.palettes.primary.700}", "$type": "color" }
+          "outlinePrimary": {
+            "$type": "color",
+            "$value": "{color.seed.primary}"
+          },
+          "outlinePrimarySubtle": {
+            "$type": "color",
+            "$value": "{color.palettes.primary.200}"
+          },
+          "outlinePrimaryIntense": {
+            "$type": "color",
+            "$value": "{color.palettes.primary.700}"
+          }
         }
       },
       "text": {
-        "onPrimary": {
-          "default": { "$value": "#FFFFFF", "$type": "color" }
-        },
         "neutral": {
-          "primary": { "$value": "{color.palettes.neutral.900}", "$type": "color" },
-          "secondary": { "$value": "{color.palettes.neutral.800}", "$type": "color" },
-          "tertiary": { "$value": "{color.palettes.neutral.600}", "$type": "color" },
-          "inverted": {
-            "primary": { "$value": "{color.palettes.neutral.50}", "$type": "color" },
-            "secondary": { "$value": "{color.palettes.neutral.100}", "$type": "color" },
-            "tertiary": { "$value": "{color.palettes.neutral.300}", "$type": "color" }
+          "textPrimary": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.950}"
+          },
+          "textSecondary": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.900}"
+          },
+          "textTertiary": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.800}"
+          },
+          "textPrimaryInverse": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.50}"
+          },
+          "textSecondaryInverse": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.100}"
+          },
+          "textTertiaryInverse": {
+            "$type": "color",
+            "$value": "{color.palettes.neutral.200}"
+          }
+        },
+        "onPrimary": {
+          "default": {
+            "$type": "color",
+            "$value": "{color.seed.white}"
           }
         }
       }

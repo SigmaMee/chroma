@@ -89,22 +89,28 @@
             </section>
 
             <section class="card scale-card">
-              <div class="status">
-                <span>Greyscale scale (10 steps)</span>
-                <span class="pill" id="scale-count">0</span>
-              </div>
+             
+              <label>Palettes</label>
+              
+             <span>Neutral (10 steps)</span>
               <div class="scale-grid" id="scale-grid">
                 <p class="helper">Generate tokens to preview the scale.</p>
               </div>
-            </section>
+              
 
-            <section class="card scale-card primary-scale-card">
-              <div class="status">
-                <span>Primary color scale (10 steps)</span>
-                <span class="pill" id="primary-scale-count">0</span>
-              </div>
+              
+              <span>Primary (10 steps)</span>
               <div class="scale-grid" id="primary-scale-grid">
                 <p class="helper">Generate tokens to preview the primary color scale.</p>
+              </div>
+              
+            </section>
+
+            <section class="card">
+              <label>Semantic Mapping</label>
+              <p class="helper" style="margin-top: 0;">Override the default semantic token mappings from the palettes above.</p>
+              <div id="semantic-mapping-container">
+                <p class="helper">Generate tokens to configure semantic mappings.</p>
               </div>
             </section>
 
@@ -112,13 +118,6 @@
               <div class="status">
                 <span>WCAG contrast matrix (background × foreground)</span>
                 <span class="pill" id="matrix-pass-count">0</span>
-              </div>
-              <div>
-                <label for="complianceLevel">Compliance level</label>
-                <select id="complianceLevel">
-                  <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
-                  <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
-                </select>
               </div>
               <div class="matrix-grid" id="matrix-grid">
                 <p class="helper">Generate tokens to evaluate combinations.</p>
@@ -169,6 +168,13 @@
                   <div class="status">
                     <span>Semantic tokens WCAG validation</span>
                     <span class="pill" id="semantic-matrix-pass-count">0</span>
+                  </div>
+                  <div>
+                    <label for="complianceLevel">Compliance level</label>
+                    <select id="complianceLevel">
+                      <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
+                      <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
+                    </select>
                   </div>
                   <div class="matrix-grid" id="semantic-matrix-grid">
                     <p class="helper">Generate tokens to validate semantic color combinations.</p>
