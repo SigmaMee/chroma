@@ -13,6 +13,7 @@ let tintAmounts = {
 let currentTintLevel = "low";
 let currentTintColorMode = "primary";
 const semanticOverrides = {};
+let currentTheme = 'light'; // Track current theme for semantic preview
 
 function generateRandomTintAmounts() {
   tintAmounts.low = 1 + Math.random() * 0.4;
@@ -611,19 +612,19 @@ function renderPrimaryColorMatrix(primaryScale, neutralScale) {
   if (primaryMatrixPassCount) primaryMatrixPassCount.textContent = `${passStrongCount} strong / ${passWeakCount} weak`;
 }
 
-function renderSemanticMatrix(tokens, complianceMode) {
+function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
   const semanticMatrixGrid = document.getElementById("semantic-matrix-grid");
   const semanticMatrixPassCount = document.getElementById("semantic-matrix-pass-count");
   
-  if (!semanticMatrixGrid || !semanticMatrixPassCount || !tokens || !tokens.color || !tokens.color.semantic) {
+  if (!semanticMatrixGrid || !semanticMatrixPassCount || !tokens || !tokens.color || !tokens.color.semantic || !tokens.color.semantic[theme]) {
     return;
   }
 
   semanticMatrixGrid.innerHTML = "";
   if (semanticMatrixPassCount) semanticMatrixPassCount.textContent = "0";
 
-  // Extract semantic tokens from tokens object
-  const semantic = tokens.color.semantic;
+  // Extract semantic tokens from tokens object (using selected theme)
+  const semantic = tokens.color.semantic[theme];
   
   // Helper to resolve hex value from $value reference or direct hex
   function resolveHex(obj) {
@@ -791,9 +792,9 @@ function renderSemanticMatrix(tokens, complianceMode) {
   if (semanticMatrixPassCount) semanticMatrixPassCount.textContent = `${totalPassStrong} strong / ${totalPassWeak} weak`;
 }
 
-function renderSemanticPreview(semantic, complianceMode, tokens, scale) {
+function renderSemanticPreview(semantic, complianceMode, tokens, scale, theme = 'light') {
   const previewContainer = document.getElementById("semantic-preview-container");
-  if (!previewContainer || !tokens || !tokens.color || !tokens.color.semantic) {
+  if (!previewContainer || !tokens || !tokens.color || !tokens.color.semantic || !tokens.color.semantic[theme]) {
     return;
   }
 
@@ -826,7 +827,7 @@ function renderSemanticPreview(semantic, complianceMode, tokens, scale) {
 
   // Build CSS variables from tokens object
   const cssVars = {};
-  const semanticTokens = tokens.color.semantic;
+  const semanticTokens = tokens.color.semantic[theme];
   
   // Map neutral surface tokens
   if (semanticTokens.surface && semanticTokens.surface.neutral) {
@@ -1147,6 +1148,13 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     $description: "White seed color",
   };
 
+  // Add black seed color
+  root[colorKey].seed.black = {
+    $value: "#000000",
+    $type: "color",
+    $description: "Black seed color",
+  };
+
   // Add palettes (primary and neutral scales)
   root[colorKey].palettes = root[colorKey].palettes || {};
   root[colorKey].palettes.primary = {};
@@ -1188,51 +1196,97 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     }
   });
 
-  // Initialize semantic structure: semantic { surface { neutral, primary }, outline { neutral, primary }, text { neutral, primary }, ... }
+  // Initialize semantic structure with light and dark themes
+  // semantic.light and semantic.dark will each contain { surface, outline, text }
   root[colorKey].semantic = {
-    surface: {},
-    outline: {},
-    text: {},
+    light: {
+      surface: {},
+      outline: {},
+      text: {},
+    },
+    dark: {
+      surface: {},
+      outline: {},
+      text: {},
+    }
   };
 
   // Add semantic tokens from pre-generated neutral semantic (passed as parameter)
   if (semanticNeutral) {
-    // Add neutral surface tokens under semantic.surface.neutral
-    root[colorKey].semantic.surface.neutral = {};
-    root[colorKey].semantic.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
-    if (semanticNeutral.surface) root[colorKey].semantic.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
-    if (semanticNeutral.surfaceVariant) root[colorKey].semantic.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceVariant"] || semanticNeutral.surfaceVariant.ref, $type: "color" };
-    if (semanticNeutral.surfaceInverted) root[colorKey].semantic.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
-    if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
+    // === LIGHT THEME ===
+    // Add neutral surface tokens under semantic.light.surface.neutral
+    root[colorKey].semantic.light.surface.neutral = {};
+    root[colorKey].semantic.light.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
+    if (semanticNeutral.surface) root[colorKey].semantic.light.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
+    if (semanticNeutral.surfaceVariant) root[colorKey].semantic.light.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceVariant"] || semanticNeutral.surfaceVariant.ref, $type: "color" };
+    if (semanticNeutral.surfaceInverted) root[colorKey].semantic.light.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
+    if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.light.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
 
-    // Add neutral text tokens under semantic.text.neutral
-    root[colorKey].semantic.text.neutral = {};
+    // Add neutral text tokens under semantic.light.text.neutral
+    root[colorKey].semantic.light.text.neutral = {};
     if (semanticNeutral.text) {
-      if (semanticNeutral.text.primary) root[colorKey].semantic.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
-      if (semanticNeutral.text.secondary) root[colorKey].semantic.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
-      if (semanticNeutral.text.tertiary) root[colorKey].semantic.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
+      if (semanticNeutral.text.primary) root[colorKey].semantic.light.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
+      if (semanticNeutral.text.secondary) root[colorKey].semantic.light.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
+      if (semanticNeutral.text.tertiary) root[colorKey].semantic.light.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
     }
 
-    // Add neutral text inverted tokens directly under semantic.text.neutral (not nested in inverted)
+    // Add neutral text inverted tokens directly under semantic.light.text.neutral (not nested in inverted)
     if (semanticNeutral.textInverted) {
-      if (semanticNeutral.textInverted.primary) root[colorKey].semantic.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
+      if (semanticNeutral.textInverted.primary) root[colorKey].semantic.light.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
+      if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.light.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
+      if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.light.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
     }
 
-    // Add neutral outline tokens under semantic.outline.neutral
-    root[colorKey].semantic.outline.neutral = {};
+    // Add neutral outline tokens under semantic.light.outline.neutral
+    root[colorKey].semantic.light.outline.neutral = {};
     if (semanticNeutral.outline) {
-      if (semanticNeutral.outline.subtle) root[colorKey].semantic.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
-      if (semanticNeutral.outline.default) root[colorKey].semantic.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
-      if (semanticNeutral.outline.intense) root[colorKey].semantic.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
+      if (semanticNeutral.outline.subtle) root[colorKey].semantic.light.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
+      if (semanticNeutral.outline.default) root[colorKey].semantic.light.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
+      if (semanticNeutral.outline.intense) root[colorKey].semantic.light.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
     }
 
-    // Add neutral outline inverted tokens directly under semantic.outline.neutral (not nested in inverted)
+    // Add neutral outline inverted tokens directly under semantic.light.outline.neutral (not nested in inverted)
     if (semanticNeutral.outlineInverted) {
-      if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
+      if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.light.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
+      if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.light.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
+      if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.light.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
+    }
+
+    // === DARK THEME (inverted) ===
+    // In dark theme, swap surface <-> surfaceInverted and text <-> textInverted
+    root[colorKey].semantic.dark.surface.neutral = {};
+    // Base uses black seed color in dark theme
+    root[colorKey].semantic.dark.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.black}", $type: "color" };
+    if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.dark.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
+    if (semanticNeutral.surfaceInverted) root[colorKey].semantic.dark.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
+    // Inverted surfaces in dark theme are the light surfaces
+    if (semanticNeutral.surface) root[colorKey].semantic.dark.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
+    root[colorKey].semantic.dark.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
+
+    // Dark theme text: swap text <-> textInverted
+    root[colorKey].semantic.dark.text.neutral = {};
+    if (semanticNeutral.textInverted) {
+      if (semanticNeutral.textInverted.primary) root[colorKey].semantic.dark.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
+      if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.dark.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
+      if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
+    }
+    if (semanticNeutral.text) {
+      if (semanticNeutral.text.primary) root[colorKey].semantic.dark.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
+      if (semanticNeutral.text.secondary) root[colorKey].semantic.dark.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
+      if (semanticNeutral.text.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
+    }
+
+    // Dark theme outlines: swap outline <-> outlineInverted
+    root[colorKey].semantic.dark.outline.neutral = {};
+    if (semanticNeutral.outlineInverted) {
+      if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.dark.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
+      if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.dark.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
+      if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.dark.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
+    }
+    if (semanticNeutral.outline) {
+      if (semanticNeutral.outline.subtle) root[colorKey].semantic.dark.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
+      if (semanticNeutral.outline.default) root[colorKey].semantic.dark.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
+      if (semanticNeutral.outline.intense) root[colorKey].semantic.dark.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
     }
   }
 
@@ -1240,12 +1294,16 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
   // Always use primaryData (seed) for surfacePrimary, then calculate subtle/intense from it
   if (primaryData && primaryData.hex && primaryData.hsl) {
     // Initialize primary sub-objects if they don't exist
-    if (!root[colorKey].semantic.surface.primary) root[colorKey].semantic.surface.primary = {};
-    if (!root[colorKey].semantic.outline.primary) root[colorKey].semantic.outline.primary = {};
+    if (!root[colorKey].semantic.light.surface.primary) root[colorKey].semantic.light.surface.primary = {};
+    if (!root[colorKey].semantic.light.outline.primary) root[colorKey].semantic.light.outline.primary = {};
+    if (!root[colorKey].semantic.dark.surface.primary) root[colorKey].semantic.dark.surface.primary = {};
+    if (!root[colorKey].semantic.dark.outline.primary) root[colorKey].semantic.dark.outline.primary = {};
 
-    // surfacePrimary & outlinePrimary -> always use seed
-    root[colorKey].semantic.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+    // surfacePrimary & outlinePrimary -> always use seed (same for light and dark)
+    root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
+    root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+    root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
+    root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
 
     // Find the primary seed in the scale and pick adjacent tokens
     const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
@@ -1285,18 +1343,23 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     }
     
     if (subtleLabel) {
-      root[colorKey].semantic.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+      root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
     }
     
     if (intenseLabel) {
-      root[colorKey].semantic.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+      root[colorKey].semantic.light.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+      root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
     }
 
     // textOnPrimary: check contrast between primary surface (seed) and textPrimary from neutral scale
-    // If contrast >= 4.5:1, use textPrimary, else use white
-    if (!root[colorKey].semantic.text.onPrimary) root[colorKey].semantic.text.onPrimary = {};
+    // If contrast >= 4.5:1, use textPrimary, else use white (same for both themes)
+    if (!root[colorKey].semantic.light.text.onPrimary) root[colorKey].semantic.light.text.onPrimary = {};
+    if (!root[colorKey].semantic.dark.text.onPrimary) root[colorKey].semantic.dark.text.onPrimary = {};
 
     if (semanticNeutral && semanticNeutral.text && semanticNeutral.text.primary) {
       // Use the hex value directly from the semantic object
@@ -1305,14 +1368,17 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       
       if (typeof contrastOnPrimary === "number" && contrastOnPrimary >= 4.5) {
         // Use neutral text.primary as textOnPrimary
-        root[colorKey].semantic.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
+        root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
+        root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
       } else {
         // Use white
-        root[colorKey].semantic.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
+        root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
+        root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
       }
     } else {
       // Fallback to white if semantic text is not available
-      root[colorKey].semantic.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
+      root[colorKey].semantic.light.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
+      root[colorKey].semantic.dark.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
     }
   }
 
@@ -1513,7 +1579,7 @@ function generateSemanticFromNeutral(neutralScale, complianceMode = "AA") {
   };
 }
 
-function renderSemanticMapping(tokens, scale) {
+function renderSemanticMapping(tokens, scale, theme = 'light') {
   const container = document.getElementById("semantic-mapping-container");
   if (!container || !tokens || !tokens.color || !tokens.color.semantic) {
     return;
@@ -1521,7 +1587,9 @@ function renderSemanticMapping(tokens, scale) {
 
   container.innerHTML = "";
 
-  const semantic = tokens.color.semantic;
+  // Show both light and dark themes
+  const lightSemantic = tokens.color.semantic.light;
+  const darkSemantic = tokens.color.semantic.dark;
   
   // Helper to extract palette reference from $value
   function extractPaletteRef(value) {
@@ -1545,6 +1613,7 @@ function renderSemanticMapping(tokens, scale) {
 
   const seedOptions = [
     { value: "{color.seed.white}", label: "white", hex: "#FFFFFF" },
+    { value: "{color.seed.black}", label: "black", hex: "#000000" },
     { value: "{color.seed.primary}", label: "primary seed", hex: tokens.color.seed.primary.$value }
   ];
 
@@ -1602,127 +1671,273 @@ function renderSemanticMapping(tokens, scale) {
   }
 
   // Create sections for different semantic token groups
-  const surfaceGroup = document.createElement("div");
-  surfaceGroup.style.marginBottom = "16px";
-  const surfaceTitle = document.createElement("h4");
-  surfaceTitle.textContent = "Surfaces";
-  surfaceTitle.style.fontSize = "13px";
-  surfaceTitle.style.fontWeight = "600";
-  surfaceTitle.style.marginBottom = "8px";
-  surfaceGroup.appendChild(surfaceTitle);
+  // LIGHT THEME
+  const lightThemeSection = document.createElement("div");
+  lightThemeSection.style.marginBottom = "24px";
+  const lightThemeTitle = document.createElement("h3");
+  lightThemeTitle.textContent = "Light Theme";
+  lightThemeTitle.style.fontSize = "14px";
+  lightThemeTitle.style.fontWeight = "700";
+  lightThemeTitle.style.marginBottom = "12px";
+  lightThemeTitle.style.color = "var(--accent)";
+  lightThemeSection.appendChild(lightThemeTitle);
 
-  if (semantic.surface && semantic.surface.neutral) {
-    if (semantic.surface.neutral.surfaceBase) {
-      surfaceGroup.appendChild(createMapping("base", semantic.surface.neutral.surfaceBase.$value, "surface.neutral.surfaceBase"));
+  const lightSurfaceGroup = document.createElement("div");
+  lightSurfaceGroup.style.marginBottom = "16px";
+  const lightSurfaceTitle = document.createElement("h4");
+  lightSurfaceTitle.textContent = "Surfaces";
+  lightSurfaceTitle.style.fontSize = "13px";
+  lightSurfaceTitle.style.fontWeight = "600";
+  lightSurfaceTitle.style.marginBottom = "8px";
+  lightSurfaceGroup.appendChild(lightSurfaceTitle);
+
+  if (lightSemantic && lightSemantic.surface && lightSemantic.surface.neutral) {
+    if (lightSemantic.surface.neutral.surfaceBase) {
+      lightSurfaceGroup.appendChild(createMapping("base", lightSemantic.surface.neutral.surfaceBase.$value, "surface.neutral.surfaceBase"));
     }
-    if (semantic.surface.neutral.surfaceDefault) {
-      surfaceGroup.appendChild(createMapping("default", semantic.surface.neutral.surfaceDefault.$value, "surface.neutral.surfaceDefault"));
+    if (lightSemantic.surface.neutral.surfaceDefault) {
+      lightSurfaceGroup.appendChild(createMapping("default", lightSemantic.surface.neutral.surfaceDefault.$value, "surface.neutral.surfaceDefault"));
     }
-    if (semantic.surface.neutral.surfaceVariant) {
-      surfaceGroup.appendChild(createMapping("variant", semantic.surface.neutral.surfaceVariant.$value, "surface.neutral.surfaceVariant"));
+    if (lightSemantic.surface.neutral.surfaceVariant) {
+      lightSurfaceGroup.appendChild(createMapping("variant", lightSemantic.surface.neutral.surfaceVariant.$value, "surface.neutral.surfaceVariant"));
     }
-    if (semantic.surface.neutral.surfaceInverted) {
-      surfaceGroup.appendChild(createMapping("inverted", semantic.surface.neutral.surfaceInverted.$value, "surface.neutral.surfaceInverted"));
+    if (lightSemantic.surface.neutral.surfaceInverted) {
+      lightSurfaceGroup.appendChild(createMapping("inverted", lightSemantic.surface.neutral.surfaceInverted.$value, "surface.neutral.surfaceInverted"));
     }
-    if (semantic.surface.neutral.surfaceInvertedVariant) {
-      surfaceGroup.appendChild(createMapping("inverted variant", semantic.surface.neutral.surfaceInvertedVariant.$value, "surface.neutral.surfaceInvertedVariant"));
+    if (lightSemantic.surface.neutral.surfaceInvertedVariant) {
+      lightSurfaceGroup.appendChild(createMapping("inverted variant", lightSemantic.surface.neutral.surfaceInvertedVariant.$value, "surface.neutral.surfaceInvertedVariant"));
     }
   }
 
-  if (semantic.surface && semantic.surface.primary) {
-    if (semantic.surface.primary.surfacePrimary) {
-      surfaceGroup.appendChild(createMapping("primary", semantic.surface.primary.surfacePrimary.$value, "surface.primary.surfacePrimary"));
+  if (lightSemantic && lightSemantic.surface && lightSemantic.surface.primary) {
+    if (lightSemantic.surface.primary.surfacePrimary) {
+      lightSurfaceGroup.appendChild(createMapping("primary", lightSemantic.surface.primary.surfacePrimary.$value, "surface.primary.surfacePrimary"));
     }
-    if (semantic.surface.primary.surfacePrimarySubtle) {
-      surfaceGroup.appendChild(createMapping("primary subtle", semantic.surface.primary.surfacePrimarySubtle.$value, "surface.primary.surfacePrimarySubtle"));
+    if (lightSemantic.surface.primary.surfacePrimarySubtle) {
+      lightSurfaceGroup.appendChild(createMapping("primary subtle", lightSemantic.surface.primary.surfacePrimarySubtle.$value, "surface.primary.surfacePrimarySubtle"));
     }
-    if (semantic.surface.primary.surfacePrimaryIntense) {
-      surfaceGroup.appendChild(createMapping("primary intense", semantic.surface.primary.surfacePrimaryIntense.$value, "surface.primary.surfacePrimaryIntense"));
-    }
-  }
-
-  container.appendChild(surfaceGroup);
-
-  // Text tokens
-  const textGroup = document.createElement("div");
-  textGroup.style.marginBottom = "16px";
-  const textTitle = document.createElement("h4");
-  textTitle.textContent = "Text";
-  textTitle.style.fontSize = "13px";
-  textTitle.style.fontWeight = "600";
-  textTitle.style.marginBottom = "8px";
-  textGroup.appendChild(textTitle);
-
-  if (semantic.text && semantic.text.neutral) {
-    if (semantic.text.neutral.textPrimary) {
-      textGroup.appendChild(createMapping("primary", semantic.text.neutral.textPrimary.$value, "text.neutral.textPrimary"));
-    }
-    if (semantic.text.neutral.textSecondary) {
-      textGroup.appendChild(createMapping("secondary", semantic.text.neutral.textSecondary.$value, "text.neutral.textSecondary"));
-    }
-    if (semantic.text.neutral.textTertiary) {
-      textGroup.appendChild(createMapping("tertiary", semantic.text.neutral.textTertiary.$value, "text.neutral.textTertiary"));
-    }
-    if (semantic.text.neutral.textPrimaryInverse) {
-      textGroup.appendChild(createMapping("primary inverse", semantic.text.neutral.textPrimaryInverse.$value, "text.neutral.textPrimaryInverse"));
-    }
-    if (semantic.text.neutral.textSecondaryInverse) {
-      textGroup.appendChild(createMapping("secondary inverse", semantic.text.neutral.textSecondaryInverse.$value, "text.neutral.textSecondaryInverse"));
-    }
-    if (semantic.text.neutral.textTertiaryInverse) {
-      textGroup.appendChild(createMapping("tertiary inverse", semantic.text.neutral.textTertiaryInverse.$value, "text.neutral.textTertiaryInverse"));
+    if (lightSemantic.surface.primary.surfacePrimaryIntense) {
+      lightSurfaceGroup.appendChild(createMapping("primary intense", lightSemantic.surface.primary.surfacePrimaryIntense.$value, "surface.primary.surfacePrimaryIntense"));
     }
   }
 
-  if (semantic.text && semantic.text.onPrimary && semantic.text.onPrimary.default) {
-    textGroup.appendChild(createMapping("on primary", semantic.text.onPrimary.default.$value, "text.onPrimary.default"));
-  }
+  lightThemeSection.appendChild(lightSurfaceGroup);
 
-  container.appendChild(textGroup);
+  // Light theme text tokens
+  const lightTextGroup = document.createElement("div");
+  lightTextGroup.style.marginBottom = "16px";
+  const lightTextTitle = document.createElement("h4");
+  lightTextTitle.textContent = "Text";
+  lightTextTitle.style.fontSize = "13px";
+  lightTextTitle.style.fontWeight = "600";
+  lightTextTitle.style.marginBottom = "8px";
+  lightTextGroup.appendChild(lightTextTitle);
 
-  // Outline tokens
-  const outlineGroup = document.createElement("div");
-  const outlineTitle = document.createElement("h4");
-  outlineTitle.textContent = "Outlines";
-  outlineTitle.style.fontSize = "13px";
-  outlineTitle.style.fontWeight = "600";
-  outlineTitle.style.marginBottom = "8px";
-  outlineGroup.appendChild(outlineTitle);
-
-  if (semantic.outline && semantic.outline.neutral) {
-    if (semantic.outline.neutral.outlineSubtle) {
-      outlineGroup.appendChild(createMapping("subtle", semantic.outline.neutral.outlineSubtle.$value, "outline.neutral.outlineSubtle"));
+  if (lightSemantic && lightSemantic.text && lightSemantic.text.neutral) {
+    if (lightSemantic.text.neutral.textPrimary) {
+      lightTextGroup.appendChild(createMapping("primary", lightSemantic.text.neutral.textPrimary.$value, "text.neutral.textPrimary"));
     }
-    if (semantic.outline.neutral.outlineDefault) {
-      outlineGroup.appendChild(createMapping("default", semantic.outline.neutral.outlineDefault.$value, "outline.neutral.outlineDefault"));
+    if (lightSemantic.text.neutral.textSecondary) {
+      lightTextGroup.appendChild(createMapping("secondary", lightSemantic.text.neutral.textSecondary.$value, "text.neutral.textSecondary"));
     }
-    if (semantic.outline.neutral.outlineIntense) {
-      outlineGroup.appendChild(createMapping("intense", semantic.outline.neutral.outlineIntense.$value, "outline.neutral.outlineIntense"));
+    if (lightSemantic.text.neutral.textTertiary) {
+      lightTextGroup.appendChild(createMapping("tertiary", lightSemantic.text.neutral.textTertiary.$value, "text.neutral.textTertiary"));
     }
-    if (semantic.outline.neutral.outlineInverseSubtle) {
-      outlineGroup.appendChild(createMapping("inverse subtle", semantic.outline.neutral.outlineInverseSubtle.$value, "outline.neutral.outlineInverseSubtle"));
+    if (lightSemantic.text.neutral.textPrimaryInverse) {
+      lightTextGroup.appendChild(createMapping("primary inverse", lightSemantic.text.neutral.textPrimaryInverse.$value, "text.neutral.textPrimaryInverse"));
     }
-    if (semantic.outline.neutral.outlineInverse) {
-      outlineGroup.appendChild(createMapping("inverse", semantic.outline.neutral.outlineInverse.$value, "outline.neutral.outlineInverse"));
+    if (lightSemantic.text.neutral.textSecondaryInverse) {
+      lightTextGroup.appendChild(createMapping("secondary inverse", lightSemantic.text.neutral.textSecondaryInverse.$value, "text.neutral.textSecondaryInverse"));
     }
-    if (semantic.outline.neutral.outlineInverseIntense) {
-      outlineGroup.appendChild(createMapping("inverse intense", semantic.outline.neutral.outlineInverseIntense.$value, "outline.neutral.outlineInverseIntense"));
+    if (lightSemantic.text.neutral.textTertiaryInverse) {
+      lightTextGroup.appendChild(createMapping("tertiary inverse", lightSemantic.text.neutral.textTertiaryInverse.$value, "text.neutral.textTertiaryInverse"));
     }
   }
 
-  if (semantic.outline && semantic.outline.primary) {
-    if (semantic.outline.primary.outlinePrimary) {
-      outlineGroup.appendChild(createMapping("primary", semantic.outline.primary.outlinePrimary.$value, "outline.primary.outlinePrimary"));
+  if (lightSemantic && lightSemantic.text && lightSemantic.text.onPrimary && lightSemantic.text.onPrimary.default) {
+    lightTextGroup.appendChild(createMapping("on primary", lightSemantic.text.onPrimary.default.$value, "text.onPrimary.default"));
+  }
+
+  lightThemeSection.appendChild(lightTextGroup);
+
+  // Light theme outline tokens
+  const lightOutlineGroup = document.createElement("div");
+  const lightOutlineTitle = document.createElement("h4");
+  lightOutlineTitle.textContent = "Outlines";
+  lightOutlineTitle.style.fontSize = "13px";
+  lightOutlineTitle.style.fontWeight = "600";
+  lightOutlineTitle.style.marginBottom = "8px";
+  lightOutlineGroup.appendChild(lightOutlineTitle);
+
+  if (lightSemantic && lightSemantic.outline && lightSemantic.outline.neutral) {
+    if (lightSemantic.outline.neutral.outlineSubtle) {
+      lightOutlineGroup.appendChild(createMapping("subtle", lightSemantic.outline.neutral.outlineSubtle.$value, "outline.neutral.outlineSubtle"));
     }
-    if (semantic.outline.primary.outlinePrimarySubtle) {
-      outlineGroup.appendChild(createMapping("primary subtle", semantic.outline.primary.outlinePrimarySubtle.$value, "outline.primary.outlinePrimarySubtle"));
+    if (lightSemantic.outline.neutral.outlineDefault) {
+      lightOutlineGroup.appendChild(createMapping("default", lightSemantic.outline.neutral.outlineDefault.$value, "outline.neutral.outlineDefault"));
     }
-    if (semantic.outline.primary.outlinePrimaryIntense) {
-      outlineGroup.appendChild(createMapping("primary intense", semantic.outline.primary.outlinePrimaryIntense.$value, "outline.primary.outlinePrimaryIntense"));
+    if (lightSemantic.outline.neutral.outlineIntense) {
+      lightOutlineGroup.appendChild(createMapping("intense", lightSemantic.outline.neutral.outlineIntense.$value, "outline.neutral.outlineIntense"));
+    }
+    if (lightSemantic.outline.neutral.outlineInverseSubtle) {
+      lightOutlineGroup.appendChild(createMapping("inverse subtle", lightSemantic.outline.neutral.outlineInverseSubtle.$value, "outline.neutral.outlineInverseSubtle"));
+    }
+    if (lightSemantic.outline.neutral.outlineInverse) {
+      lightOutlineGroup.appendChild(createMapping("inverse", lightSemantic.outline.neutral.outlineInverse.$value, "outline.neutral.outlineInverse"));
+    }
+    if (lightSemantic.outline.neutral.outlineInverseIntense) {
+      lightOutlineGroup.appendChild(createMapping("inverse intense", lightSemantic.outline.neutral.outlineInverseIntense.$value, "outline.neutral.outlineInverseIntense"));
     }
   }
 
-  container.appendChild(outlineGroup);
+  if (lightSemantic && lightSemantic.outline && lightSemantic.outline.primary) {
+    if (lightSemantic.outline.primary.outlinePrimary) {
+      lightOutlineGroup.appendChild(createMapping("primary", lightSemantic.outline.primary.outlinePrimary.$value, "outline.primary.outlinePrimary"));
+    }
+    if (lightSemantic.outline.primary.outlinePrimarySubtle) {
+      lightOutlineGroup.appendChild(createMapping("primary subtle", lightSemantic.outline.primary.outlinePrimarySubtle.$value, "outline.primary.outlinePrimarySubtle"));
+    }
+    if (lightSemantic.outline.primary.outlinePrimaryIntense) {
+      lightOutlineGroup.appendChild(createMapping("primary intense", lightSemantic.outline.primary.outlinePrimaryIntense.$value, "outline.primary.outlinePrimaryIntense"));
+    }
+  }
+
+  lightThemeSection.appendChild(lightOutlineGroup);
+  container.appendChild(lightThemeSection);
+
+  // DARK THEME
+  const darkThemeSection = document.createElement("div");
+  darkThemeSection.style.marginBottom = "24px";
+  const darkThemeTitle = document.createElement("h3");
+  darkThemeTitle.textContent = "Dark Theme";
+  darkThemeTitle.style.fontSize = "14px";
+  darkThemeTitle.style.fontWeight = "700";
+  darkThemeTitle.style.marginBottom = "12px";
+  darkThemeTitle.style.color = "var(--accent)";
+  darkThemeSection.appendChild(darkThemeTitle);
+
+  const darkSurfaceGroup = document.createElement("div");
+  darkSurfaceGroup.style.marginBottom = "16px";
+  const darkSurfaceTitle = document.createElement("h4");
+  darkSurfaceTitle.textContent = "Surfaces";
+  darkSurfaceTitle.style.fontSize = "13px";
+  darkSurfaceTitle.style.fontWeight = "600";
+  darkSurfaceTitle.style.marginBottom = "8px";
+  darkSurfaceGroup.appendChild(darkSurfaceTitle);
+
+  if (darkSemantic && darkSemantic.surface && darkSemantic.surface.neutral) {
+    if (darkSemantic.surface.neutral.surfaceBase) {
+      darkSurfaceGroup.appendChild(createMapping("base", darkSemantic.surface.neutral.surfaceBase.$value, "surface.neutral.surfaceBase"));
+    }
+    if (darkSemantic.surface.neutral.surfaceDefault) {
+      darkSurfaceGroup.appendChild(createMapping("default", darkSemantic.surface.neutral.surfaceDefault.$value, "surface.neutral.surfaceDefault"));
+    }
+    if (darkSemantic.surface.neutral.surfaceVariant) {
+      darkSurfaceGroup.appendChild(createMapping("variant", darkSemantic.surface.neutral.surfaceVariant.$value, "surface.neutral.surfaceVariant"));
+    }
+    if (darkSemantic.surface.neutral.surfaceInverted) {
+      darkSurfaceGroup.appendChild(createMapping("inverted", darkSemantic.surface.neutral.surfaceInverted.$value, "surface.neutral.surfaceInverted"));
+    }
+    if (darkSemantic.surface.neutral.surfaceInvertedVariant) {
+      darkSurfaceGroup.appendChild(createMapping("inverted variant", darkSemantic.surface.neutral.surfaceInvertedVariant.$value, "surface.neutral.surfaceInvertedVariant"));
+    }
+  }
+
+  if (darkSemantic && darkSemantic.surface && darkSemantic.surface.primary) {
+    if (darkSemantic.surface.primary.surfacePrimary) {
+      darkSurfaceGroup.appendChild(createMapping("primary", darkSemantic.surface.primary.surfacePrimary.$value, "surface.primary.surfacePrimary"));
+    }
+    if (darkSemantic.surface.primary.surfacePrimarySubtle) {
+      darkSurfaceGroup.appendChild(createMapping("primary subtle", darkSemantic.surface.primary.surfacePrimarySubtle.$value, "surface.primary.surfacePrimarySubtle"));
+    }
+    if (darkSemantic.surface.primary.surfacePrimaryIntense) {
+      darkSurfaceGroup.appendChild(createMapping("primary intense", darkSemantic.surface.primary.surfacePrimaryIntense.$value, "surface.primary.surfacePrimaryIntense"));
+    }
+  }
+
+  darkThemeSection.appendChild(darkSurfaceGroup);
+
+  // Dark theme text tokens
+  const darkTextGroup = document.createElement("div");
+  darkTextGroup.style.marginBottom = "16px";
+  const darkTextTitle = document.createElement("h4");
+  darkTextTitle.textContent = "Text";
+  darkTextTitle.style.fontSize = "13px";
+  darkTextTitle.style.fontWeight = "600";
+  darkTextTitle.style.marginBottom = "8px";
+  darkTextGroup.appendChild(darkTextTitle);
+
+  if (darkSemantic && darkSemantic.text && darkSemantic.text.neutral) {
+    if (darkSemantic.text.neutral.textPrimary) {
+      darkTextGroup.appendChild(createMapping("primary", darkSemantic.text.neutral.textPrimary.$value, "text.neutral.textPrimary"));
+    }
+    if (darkSemantic.text.neutral.textSecondary) {
+      darkTextGroup.appendChild(createMapping("secondary", darkSemantic.text.neutral.textSecondary.$value, "text.neutral.textSecondary"));
+    }
+    if (darkSemantic.text.neutral.textTertiary) {
+      darkTextGroup.appendChild(createMapping("tertiary", darkSemantic.text.neutral.textTertiary.$value, "text.neutral.textTertiary"));
+    }
+    if (darkSemantic.text.neutral.textPrimaryInverse) {
+      darkTextGroup.appendChild(createMapping("primary inverse", darkSemantic.text.neutral.textPrimaryInverse.$value, "text.neutral.textPrimaryInverse"));
+    }
+    if (darkSemantic.text.neutral.textSecondaryInverse) {
+      darkTextGroup.appendChild(createMapping("secondary inverse", darkSemantic.text.neutral.textSecondaryInverse.$value, "text.neutral.textSecondaryInverse"));
+    }
+    if (darkSemantic.text.neutral.textTertiaryInverse) {
+      darkTextGroup.appendChild(createMapping("tertiary inverse", darkSemantic.text.neutral.textTertiaryInverse.$value, "text.neutral.textTertiaryInverse"));
+    }
+  }
+
+  if (darkSemantic && darkSemantic.text && darkSemantic.text.onPrimary && darkSemantic.text.onPrimary.default) {
+    darkTextGroup.appendChild(createMapping("on primary", darkSemantic.text.onPrimary.default.$value, "text.onPrimary.default"));
+  }
+
+  darkThemeSection.appendChild(darkTextGroup);
+
+  // Dark theme outline tokens
+  const darkOutlineGroup = document.createElement("div");
+  const darkOutlineTitle = document.createElement("h4");
+  darkOutlineTitle.textContent = "Outlines";
+  darkOutlineTitle.style.fontSize = "13px";
+  darkOutlineTitle.style.fontWeight = "600";
+  darkOutlineTitle.style.marginBottom = "8px";
+  darkOutlineGroup.appendChild(darkOutlineTitle);
+
+  if (darkSemantic && darkSemantic.outline && darkSemantic.outline.neutral) {
+    if (darkSemantic.outline.neutral.outlineSubtle) {
+      darkOutlineGroup.appendChild(createMapping("subtle", darkSemantic.outline.neutral.outlineSubtle.$value, "outline.neutral.outlineSubtle"));
+    }
+    if (darkSemantic.outline.neutral.outlineDefault) {
+      darkOutlineGroup.appendChild(createMapping("default", darkSemantic.outline.neutral.outlineDefault.$value, "outline.neutral.outlineDefault"));
+    }
+    if (darkSemantic.outline.neutral.outlineIntense) {
+      darkOutlineGroup.appendChild(createMapping("intense", darkSemantic.outline.neutral.outlineIntense.$value, "outline.neutral.outlineIntense"));
+    }
+    if (darkSemantic.outline.neutral.outlineInverseSubtle) {
+      darkOutlineGroup.appendChild(createMapping("inverse subtle", darkSemantic.outline.neutral.outlineInverseSubtle.$value, "outline.neutral.outlineInverseSubtle"));
+    }
+    if (darkSemantic.outline.neutral.outlineInverse) {
+      darkOutlineGroup.appendChild(createMapping("inverse", darkSemantic.outline.neutral.outlineInverse.$value, "outline.neutral.outlineInverse"));
+    }
+    if (darkSemantic.outline.neutral.outlineInverseIntense) {
+      darkOutlineGroup.appendChild(createMapping("inverse intense", darkSemantic.outline.neutral.outlineInverseIntense.$value, "outline.neutral.outlineInverseIntense"));
+    }
+  }
+
+  if (darkSemantic && darkSemantic.outline && darkSemantic.outline.primary) {
+    if (darkSemantic.outline.primary.outlinePrimary) {
+      darkOutlineGroup.appendChild(createMapping("primary", darkSemantic.outline.primary.outlinePrimary.$value, "outline.primary.outlinePrimary"));
+    }
+    if (darkSemantic.outline.primary.outlinePrimarySubtle) {
+      darkOutlineGroup.appendChild(createMapping("primary subtle", darkSemantic.outline.primary.outlinePrimarySubtle.$value, "outline.primary.outlinePrimarySubtle"));
+    }
+    if (darkSemantic.outline.primary.outlinePrimaryIntense) {
+      darkOutlineGroup.appendChild(createMapping("primary intense", darkSemantic.outline.primary.outlinePrimaryIntense.$value, "outline.primary.outlinePrimaryIntense"));
+    }
+  }
+
+  darkThemeSection.appendChild(darkOutlineGroup);
+  container.appendChild(darkThemeSection);
 }
 
 function generateTokens() {
@@ -1771,11 +1986,11 @@ function generateTokens() {
     if (semantic) {
       const complianceMode = complianceLevel ? complianceLevel.value : "AA";
       // Pass combined scale (neutral + primary) so preview can extract primary values
-      renderSemanticPreview(semantic, complianceMode, tokens, scale.concat(primaryScale));
+      renderSemanticPreview(semantic, complianceMode, tokens, scale.concat(primaryScale), currentTheme);
       // Render semantic contrast matrix
-      renderSemanticMatrix(tokens, complianceMode);
+      renderSemanticMatrix(tokens, complianceMode, currentTheme);
       // Render semantic mapping UI
-      renderSemanticMapping(tokens, scale.concat(primaryScale));
+      renderSemanticMapping(tokens, scale.concat(primaryScale), currentTheme);
     }
 
     // Count leaves in the nested W3C tokens object
@@ -1861,6 +2076,21 @@ tintColorSwitches.forEach((button) => {
 });
 
 generateBtn.addEventListener("click", generateTokens);
+
+// Theme toggle event listeners
+const themeButtons = document.querySelectorAll(".theme-btn");
+themeButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    // Remove active class from all theme buttons
+    themeButtons.forEach((btn) => btn.classList.remove("active"));
+    // Add active class to clicked button
+    event.target.classList.add("active");
+    // Update current theme
+    currentTheme = event.target.dataset.theme;
+    // Re-generate tokens with new theme
+    generateTokens();
+  });
+});
 
 complianceLevel.addEventListener("change", () => {
   const primary = normalizeHex(primaryInput.value);

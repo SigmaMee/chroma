@@ -262,6 +262,28 @@ textarea {
   font-size: 14px;
 }
 
+.theme-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.theme-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.2s ease;
+}
+
+.theme-btn.active {
+  background: var(--accent);
+  color: #05060a;
+}
+
 .pill {
   padding: 4px 10px;
   border-radius: 999px;
