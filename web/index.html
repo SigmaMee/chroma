@@ -17,44 +17,35 @@
 
       <div class="layout-container">
         <!-- Row 1: Inputs & Actions -->
-        <div class="top-row card">
-          <section class="options">
-            <div>
-              <label for="primaryColor">Primary colour (hex)</label>
-              <div class="color-input">
-                <input
-                  id="primaryColor"
-                  value="#3366FF"
-                  maxlength="7"
-                  placeholder="#3366FF"
-                />
-                <span class="swatch" id="primarySwatch"></span>
-                <input type="color" id="primaryColorPicker" value="#3366FF" />
-              </div>
-             
+        <div class="primary-menu">
+          <div class="primary-color-input">
+            <label for="primaryColor">Primary colour (hex)</label>
+          
+              <input
+                id="primaryColor"
+                value="#3366FF"
+                maxlength="7"
+                placeholder="#3366FF"
+              />
+              <span class="swatch" id="primarySwatch"></span>
+              <input type="color" id="primaryColorPicker" value="#3366FF" />
+          
             </div>
-            <input
-              type="hidden"
-              id="greyscaleSaturationValue"
-              value="8"
-            />
-          </section>
 
-          <section class="derived" style="display: none;">
-            <div class="status">
-              <span>Derived greyscale</span>
-              <span class="pill" id="derivedLabel">—</span>
-            </div>
-            <div class="color-input">
-              <input id="derivedHex" readonly placeholder="#000000" />
-              <span class="swatch" id="derivedSwatch"></span>
-            </div>
-          </section>
+          <input
+            type="hidden"
+            id="greyscaleSaturationValue"
+            value="8"
+          />
+          <input type="hidden" id="derivedHex" value="" />
+          <span id="derivedSwatch" style="display:none;"></span>
+          <span id="derivedLabel" style="display:none;"></span>
 
-          <section class="actions">
-            <button class="primary" id="generate">Generate tokens</button>
+          <div class="button-container">
             <button id="reset">Reset</button>
-          </section>
+            <button class="primary" id="generate">Generate tokens</button>
+            
+          </div>
         </div>
 
         <!-- Row 2: Two columns -->
@@ -197,7 +188,7 @@
                     placeholder="Generate tokens to view JSON output."
                     readonly
                   ></textarea>
-                  <div class="card actions">
+                  <div class="actions">
                     <button id="copy" disabled>Copy output</button>
                   </div>
                 </section>
@@ -209,13 +200,13 @@
 
       <footer>
         <p>
-          This web tool mirrors the logic of the Figma plugin. No data ever
-          leaves your browser.
+          Developed by <a href="https://www.linkedin.com/in/stmndesigner/">Stefanos Monastiridis</a> all rights reserved.
         </p>
       </footer>
     </div>
 
     <script type="module" src="./main.js"></script>
+    <script type="module" src="./layout.js"></script>
   </body>
 </html>
 

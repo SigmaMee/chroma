@@ -28,35 +28,41 @@ body {
   max-width: 100%;
   margin: 0 auto;
   padding: 24px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto; /* header, primary-menu, bottom-row, footer */
   gap: 16px;
   min-height: 100vh;
 }
 
 .layout-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
+  display: contents; /* delegate row sizing to .app grid */
 }
 
-.top-row {
+.top-row.card {
   display: flex;
   gap: 16px;
-  flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.top-row > .card {
-  flex: 0 1 auto;
+.top-row .primary-color-input {
+  flex: 0 0 auto;
+}
+
+.top-row .derived {
+  flex: 0 0 auto;
+}
+
+.top-row .actions {
+  flex: 0 0 auto;
 }
 
 .bottom-row {
   display: grid;
   grid-template-columns: 30% 1fr;
   gap: 16px;
-  flex: 1;
+  min-height: 0; /* allow children to shrink within grid track */
+  overflow: hidden; /* constrain columns to viewport height */
 }
 
 .column {
@@ -64,7 +70,8 @@ body {
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
-  max-height: calc(100vh - 350px);
+  min-height: 0; /* enable independent scrolling within grid area */
+  max-height: 100%;
 }
 
 header {
@@ -102,16 +109,34 @@ header p {
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
 }
 
-.options {
+.tab-content.active > .card {
   display: flex;
-  gap: 16px;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
+  flex: 1; /* expand to fill tab height */
+  min-height: 0;
 }
-.options > div {
-  flex: 1 1 0;
-  min-width: 160px;
+
+.primary-menu {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.primary-color-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.primary-color-input label {
+  margin-bottom: 0;
+  white-space: nowrap;
 }
 
 label {
@@ -148,6 +173,12 @@ textarea {
   resize: vertical;
 }
 
+.tab-content.active > .card > textarea {
+  flex: 1; /* fill available card height */
+  min-height: 0; /* override default min-height */
+  resize: none; /* disable manual resize to keep layout consistent */
+}
+
 .helper {
   font-size: 12px;
   color: var(--muted);
@@ -170,6 +201,7 @@ textarea {
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #222;
+  flex-shrink: 0;
 }
 
 .swatch.small {
@@ -323,6 +355,15 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  padding-top:1rem;
+  justify-content: flex-end;
+}
+
+.button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
 button {
@@ -338,6 +379,7 @@ button.primary {
   background: var(--accent);
   color: #05060a;
   font-weight: 600;
+  
 }
 
 button:disabled {
@@ -369,6 +411,7 @@ button:disabled {
   border-bottom: 2px solid transparent;
   position: relative;
   margin-bottom: -1px;
+  border-radius: 0; /* override button border-radius for tabs */
 }
 
 .tab-button:hover {
@@ -391,6 +434,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1; /* take all available height */
+  min-height: 0; /* allow flex children to shrink */
 }
 
 footer {
@@ -398,6 +443,11 @@ footer {
   color: var(--muted);
   font-size: 12px;
   margin-top: 12px;
+  padding: 0; /* ensure no extra vertical space */
+  line-height: 1.4; /* compact line height */
+}
+footer p {
+  margin: 0; /* remove default paragraph margins expanding footer height */
 }
 input[type="color"] {
   position: absolute;
