@@ -10,13 +10,9 @@
     <div class="app">
       <header>
         <div>
-          <h1>Colour Token Generator</h1>
-          <p>
-            Standalone web version of the Figma plugin. Generate greyscale tokens
-            plus WCAG AA matrices right in the browser.
-          </p>
-        </div>
-        <div class="badge">Web</div>
+          <h1>Chroma </h1>
+          <p class="subtitle">Colour Alchemy</p></div>
+        <div class="badge">BETA</div>
       </header>
 
       <div class="layout-container">
@@ -35,39 +31,16 @@
                 <span class="swatch" id="primarySwatch"></span>
                 <input type="color" id="primaryColorPicker" value="#3366FF" />
               </div>
-              <p class="helper">
-                Hue & lightness seed the greyscale. Saturation caps at 30%.
-              </p>
+             
             </div>
-            <div>
-              <label for="tintAmountSwitch">
-                Tint amount (%)
-                <span class="helper">(Low, Mid, or High)</span>
-              </label>
-              <div class="switch-row">
-                <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
-                <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
-                <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
-              </div>
-              <input
-                type="hidden"
-                id="greyscaleSaturationValue"
-                value="8"
-              />
-            </div>
-            <div>
-              <label for="tintColorSwitch">
-                Tint color
-                <span class="helper">(Primary or Complimentary)</span>
-              </label>
-              <div class="switch-row">
-                <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
-                <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
-              </div>
-            </div>
+            <input
+              type="hidden"
+              id="greyscaleSaturationValue"
+              value="8"
+            />
           </section>
 
-          <section class="derived">
+          <section class="derived" style="display: none;">
             <div class="status">
               <span>Derived greyscale</span>
               <span class="pill" id="derivedLabel">—</span>
@@ -88,6 +61,33 @@
         <div class="bottom-row">
           <!-- Column 1: Scales & Matrices -->
           <div class="column column-1">
+            <section class="card">
+              <div>
+                <label>Options</label>
+                <div style="margin-bottom: 12px;">
+                  <label for="tintAmountSwitch-col" style="font-size: 0.875rem; font-weight: normal;">
+                    Tint amount
+                    <span class="helper">(Low, Mid, or High)</span>
+                  </label>
+                  <div class="switch-row">
+                    <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
+                    <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
+                    <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
+                  </div>
+                </div>
+                <div>
+                  <label for="tintColorSwitch-col" style="font-size: 0.875rem; font-weight: normal;">
+                    Tint color
+                    <span class="helper">(Primary or Complimentary)</span>
+                  </label>
+                  <div class="switch-row">
+                    <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
+                    <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section class="card scale-card">
               <div class="status">
                 <span>Greyscale scale (10 steps)</span>
@@ -108,7 +108,7 @@
               </div>
             </section>
 
-            <section class="card matrix-card">
+            <section class="card matrix-card" style="display: none;">
               <div class="status">
                 <span>WCAG contrast matrix (background × foreground)</span>
                 <span class="pill" id="matrix-pass-count">0</span>
@@ -128,7 +128,7 @@
               </p>
             </section>
 
-            <section class="card">
+            <section class="card" style="display: none;">
               <div class="status">
                 <span>Primary color contrast matrix (background × foreground)</span>
                 <span class="pill" id="primary-matrix-pass-count">0</span>
@@ -147,16 +147,35 @@
             <div class="tabs-container">
               <div class="tabs-header">
                 <button class="tab-button active" data-tab="preview">Preview</button>
+                <button class="tab-button" data-tab="wcag">WCAG Validation</button>
                 <button class="tab-button" data-tab="output">JSON Output</button>
               </div>
 
               <!-- Preview Tab -->
               <div class="tab-content active" id="preview-tab">
+                <section class="card semantic-preview">
+                  <div class="status">
+                    <span>Semantic tokens preview</span>
+                  </div>
+                  <div id="semantic-preview-container">
+                    <p class="helper">Generate tokens to preview semantic surfaces and text.</p>
+                  </div>
+                </section>
+              </div>
+
+              <!-- WCAG Validation Tab -->
+              <div class="tab-content" id="wcag-tab">
                 <section class="card">
                   <div class="status">
-                    <span>Preview</span>
+                    <span>Semantic tokens WCAG validation</span>
+                    <span class="pill" id="semantic-matrix-pass-count">0</span>
                   </div>
-                  <p class="helper">Preview content will be added here.</p>
+                  <div class="matrix-grid" id="semantic-matrix-grid">
+                    <p class="helper">Generate tokens to validate semantic color combinations.</p>
+                  </div>
+                  <p class="matrix-note" id="semantic-matrix-note">
+                    Rows are semantic surfaces, columns are semantic text/outline tokens. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+                  </p>
                 </section>
               </div>
 

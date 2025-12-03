@@ -1,0 +1,91 @@
+<div class="surface">
+    <div class="baseSurface">
+        <p class="preview-heading">This is Alchemy</p>
+        <p class="primaryText"> Alchemy (from the Arabic word al-kīmīā, الكیمیاء) Alchemy is an ancient branch of natural philosophy, a philosophical and protoscientific tradition that was historically practised in China, India, the Muslim world, and Europe.[1] In its Western form, alchemy is first attested in a number of pseudepigraphical texts written in Greco-Roman Egypt during the first few centuries AD.[2] Greek-speaking alchemists often referred to their craft as "the Art" (τέχνη) or "Knowledge" (ἐπιστήμη), and it was often characterised as mystic (μυστική), sacred (ἱɛρά), or divine (θɛíα).[3]
+        </p>
+        <p class="secondaryText"> The defining objectives of alchemy are varied and include the creation of the philosopher's stone, the transmutation of base metals into noble metals (particularly gold); and the creation of an elixir of immortality; the perfection of the human body and soul. In Europe, these ideas were first connected
+        </p>
+        <p class= "tertiaryText"> You are now a color alchemist</p>
+         </div>
+         <div class="row">
+            <div class="box surfaceVariant">
+                Ingredients
+         </div>
+         <div class="box surfaceInverted">
+                Instructions
+                <div class="box surfaceInvertedVariant">luck</div>
+       </div>
+       <div class=box primarySurface>
+<span class="onPrimary">Magic</span>
+       </div>
+    </div>
+       <style>
+        .surfaceInvertedVariant {
+           background-color: var(--semantic-surface-neutral-surfaceInverted);
+           color: var(--semantic-text-onSurfaceInverted);
+           padding: 8px;
+           border-radius: 4px;
+           margin-top: 8px;
+         }
+         .surface {
+           background-color: var(--semantic-surface-neutral-surface);
+           padding: 16px;
+           border-radius: 8px;
+         }
+
+         .baseSurface {
+           background-color: var(--semantic-surface-neutral-base);
+           padding: 16px;
+           border-radius: 8px;
+         }
+
+         .primaryText {
+           color: var(--semantic-text-primary);
+           size: 1rem;
+         }
+
+         .secondaryText {
+           color: var(--semantic-text-secondary);
+           font-size: 0.875rem;
+         }
+
+         .tertiaryText {
+           color: var(--semantic-text-tertiary);
+           font-size: 0.75rem;
+         }
+
+         .preview-heading {
+           color: var(--semantic-text-primary);
+              font-weight: bold;
+                font-size: 1.25rem;
+         }
+            .row {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            }
+            .box {
+            flex: 1;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            }
+            .surfaceVariant {
+            background-color: var(--semantic-surface-neutral-surfaceVariant);
+            color: var(--semantic-text-primary);
+            }
+            .surfaceInverted {
+            background-color: var(--semantic-surface-neutral-surfaceInverted);
+            color: var(--semantic-text-onSurfaceInverted);
+            }
+            .primarySurface {
+            background-color: var(--semantic-surface-primary-surface);
+            :hover {
+                background-color: var(--semantic-surface-primary-intense);
+            }
+            }
+            .onPrimary {
+            color: var(--semantic-text-onPrimary);
+            }
+</style>
