@@ -109,8 +109,4 @@ Manual control over semantic token assignments with live preview:
 ## Roadmap
 
 - [ ] Figma plugin version for direct integration
-- [ ] Additional colour formats (RGB, HSB)
-- [ ] Export to popular design token formats (Style Dictionary, Tokens Studio)
-- [ ] Gradient and multi-colour palette support
 - [ ] Colour harmony modes (triadic, tetradic, analogous)
-- [ ] Save/load palette presets
