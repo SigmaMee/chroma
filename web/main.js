@@ -4,6 +4,94 @@ const primaryColorPicker = document.getElementById("primaryColorPicker");
 const satInput = document.getElementById("greyscaleSaturationValue");
 const formatSelect = document.getElementById("format");
 
+// Welcome page elements
+const welcomePage = document.getElementById("welcomePage");
+const mainApp = document.getElementById("mainApp");
+const welcomePrimaryColor = document.getElementById("welcomePrimaryColor");
+const welcomePrimaryHex = document.getElementById("welcomePrimaryHex");
+const welcomeSwatch = document.getElementById("welcomeSwatch");
+const welcomeGenerateBtn = document.getElementById("welcomeGenerateBtn");
+
+// Initialize welcome page
+function initWelcomePage() {
+  console.log("initWelcomePage called");
+  console.log("welcomeGenerateBtn element:", welcomeGenerateBtn);
+  console.log("welcomePrimaryHex element:", welcomePrimaryHex);
+  console.log("welcomePrimaryColor element:", welcomePrimaryColor);
+  console.log("welcomeSwatch element:", welcomeSwatch);
+  
+  if (!welcomeGenerateBtn) {
+    console.error("welcomeGenerateBtn not found!");
+    return;
+  }
+  
+  // Sync color picker and hex input
+  welcomePrimaryColor.addEventListener("input", (e) => {
+    welcomePrimaryHex.value = e.target.value;
+    welcomeSwatch.style.backgroundColor = e.target.value;
+  });
+
+  welcomePrimaryHex.addEventListener("input", (e) => {
+    let value = e.target.value.toUpperCase();
+    // Auto-add # if missing
+    if (value && !value.startsWith("#")) {
+      value = "#" + value;
+    }
+    if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+      welcomePrimaryColor.value = value;
+      welcomeSwatch.style.backgroundColor = value;
+      e.target.value = value;
+    }
+  });
+
+  // Make swatch clickable to open color picker
+  welcomeSwatch.addEventListener("click", () => {
+    welcomePrimaryColor.click();
+  });
+
+  welcomeGenerateBtn.addEventListener("click", () => {
+    const hexValue = welcomePrimaryHex.value;
+    console.log("CTA clicked, hexValue:", hexValue);
+    if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
+      console.log("Hex validation passed");
+      try {
+        // Set the primary color in the main app
+        primaryInput.value = hexValue;
+        primaryColorPicker.value = hexValue;
+        if (typeof updateSwatch === 'function') {
+          updateSwatch();
+        }
+        
+        // Hide welcome page and show main app
+        welcomePage.style.display = "none";
+        mainApp.style.display = "grid";
+        
+        // Force a layout recalculation
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+          
+          // Auto-generate tokens
+          if (typeof generateTokens === 'function') {
+            generateTokens();
+          }
+          console.log("App switched to main view and tokens generated");
+        }, 100);
+      } catch (error) {
+        console.error("Error during transition:", error);
+      }
+    } else {
+      console.log("Hex validation failed for:", hexValue);
+    }
+  });
+
+  // Allow Enter key to generate
+  welcomePrimaryHex.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      welcomeGenerateBtn.click();
+    }
+  });
+}
+
 // Tint amount switch variables
 let tintAmounts = {
   low: 0,
@@ -2178,6 +2266,9 @@ resetBtn.addEventListener("click", () => {
   renderPrimaryScale();
   renderMatrix();
 });
+
+// Initialize welcome page
+initWelcomePage();
 
 // Generate random tint amounts on app load
 generateRandomTintAmounts();

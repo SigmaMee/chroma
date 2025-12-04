@@ -649,3 +649,148 @@ input[type="color"] {
   opacity: 0.8;
 }
 
+/* Welcome Page Styles */
+.welcome-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top, #111526, #05060a 55%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.welcome-page footer {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  text-align: center;
+}
+
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  max-width: 500px;
+  text-align: center;
+}
+
+.logo-placeholder svg {
+  width: 120px;
+  height: 120px;
+}
+
+.welcome-container h1 {
+  font-size: 48px;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.welcome-subtitle {
+  font-size: 18px;
+  color: var(--muted);
+  margin: 0;
+  font-weight: 400;
+}
+
+.welcome-input-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.welcome-input-section label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.welcome-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+}
+
+.welcome-picker-wrapper {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 8px;
+}
+
+.welcome-color-picker {
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.welcome-hex-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.welcome-hex-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(90, 125, 255, 0.15);
+}
+
+.welcome-swatch {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.welcome-swatch:hover {
+  border-color: var(--accent);
+}
+
+.welcome-cta {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.welcome-cta:hover {
+  background: #7399ff;
+  transform: translateY(-2px);
+}
+
+.welcome-cta:active {
+  transform: translateY(0);
+}
+
