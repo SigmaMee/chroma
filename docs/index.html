@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chroma - Colour Alchemy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Welcome Page -->
+    <div class="welcome-page" id="welcomePage">
+      <div class="welcome-container">
+        <svg width="300" height="300" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M213.68 226.667V119.547H106.587V226.667M213.627 173.093C213.786 165.966 212.519 158.879 209.902 152.248C207.284 145.617 203.369 139.576 198.384 134.479C193.4 129.382 187.448 125.333 180.877 122.568C174.306 119.803 167.249 118.379 160.12 118.379C152.991 118.379 145.934 119.803 139.363 122.568C132.792 125.333 126.84 129.382 121.856 134.479C116.871 139.576 112.955 145.617 110.338 152.248C107.721 158.879 106.454 165.966 106.613 173.093C106.926 187.077 112.7 200.383 122.7 210.163C132.701 219.943 146.132 225.419 160.12 225.419C174.107 225.419 187.539 219.943 197.54 210.163C207.54 200.383 213.314 187.077 213.627 173.093ZM44.8 226.667L160.107 26.64L275.467 226.667H44.8ZM93.3333 275.467C108.503 284.36 125.281 290.164 142.703 292.546C160.125 294.929 177.846 293.841 194.846 289.347C211.846 284.852 227.789 277.039 241.757 266.358C255.725 255.677 267.443 242.338 276.235 227.11C285.027 211.882 290.721 195.065 292.987 177.628C295.253 160.191 294.048 142.477 289.441 125.508C284.834 108.538 276.916 92.6472 266.142 78.7501C255.369 64.8531 241.953 53.2243 226.667 44.5333C196.059 27.1311 159.81 22.5417 125.831 31.7668C91.8524 40.9919 62.9016 63.2824 45.2967 93.7741C27.6918 124.266 22.8622 160.483 31.8616 194.522C40.8611 228.562 62.9591 257.66 93.3333 275.467Z" stroke="var(--accent)" stroke-width="8" stroke-miterlimit="5.5" stroke-linejoin="bevel"/>
+        </svg>
+        <h1>Welcome to Chroma</h1>
+        <p class="welcome-subtitle" id="welcomeSubtitle">Chroma is a colour alchemist. It transmutes a single colour in a full set of tokens including primary and neutral colour palettes and semantic token sets for light and dark mode. Currently in BETA</p>
+        
+        <div class="welcome-input-section">
+          <label for="welcomePrimaryColor">Choose your primary colour</label>
+          <div class="welcome-input-group">
+            <div class="welcome-picker-wrapper">
+              <input
+                id="welcomePrimaryColor"
+                type="color"
+                value="#3366FF"
+                class="welcome-color-picker"
+              />
+            </div>
+            <input
+              id="welcomePrimaryHex"
+              type="text"
+              value="#3366FF"
+              maxlength="7"
+              placeholder="#3366FF"
+              class="welcome-hex-input"
+            />
+            <div class="welcome-swatch" id="welcomeSwatch" style="background-color: #3366FF; cursor: pointer;" title="Click to pick a color"></div>
+          </div>
+        </div>
+
+        <button id="welcomeGenerateBtn" class="welcome-cta">Begin the transmutation</button>
+      </div>
+      <footer>
+        <p>
+          Developed by <a href="https://www.linkedin.com/in/stmndesigner/">Stefanos Monastiridis</a>. All rights reserved.
+        </p>
+      </footer>
+    </div>
+
+    <!-- Main App -->
+    <div class="app" id="mainApp" style="display: none;">
+      <header>
+        <div>
+          <h1>Chroma </h1>
+          <p class="subtitle">Colour Alchemy</p></div>
+        <div class="badge">BETA</div>
+      </header>
+
+      <div class="layout-container">
+        <!-- Row 1: Inputs & Actions -->
+        <div class="primary-menu">
+          <div class="primary-color-input">
+            <label for="primaryColor">Primary colour (hex)</label>
+          
+              <input
+                id="primaryColor"
+                value="#3366FF"
+                maxlength="7"
+                placeholder="#3366FF"
+              />
+              <span class="swatch" id="primarySwatch"></span>
+              <input type="color" id="primaryColorPicker" value="#3366FF" />
+          
+            </div>
+
+          <input
+            type="hidden"
+            id="greyscaleSaturationValue"
+            value="8"
+          />
+          <input type="hidden" id="derivedHex" value="" />
+          <span id="derivedSwatch" style="display:none;"></span>
+          <span id="derivedLabel" style="display:none;"></span>
+
+          <div class="button-container">
+            <button id="reset">Reset</button>
+            <button class="primary" id="generate">Generate tokens</button>
+            
+          </div>
+        </div>
+
+        <!-- Row 2: Two columns -->
+        <div class="bottom-row">
+          <!-- Column 1: Scales & Matrices -->
+          <div class="column column-1">
+            <section class="card">
+              <div>
+                <label>Options</label>
+                <div style="margin-bottom: 12px;">
+                  <label for="tintAmountSwitch-col" style="font-size: 0.875rem; font-weight: normal;">
+                    Tint amount
+                    <span class="helper">(Low, Mid, or High)</span>
+                  </label>
+                  <div class="switch-row">
+                    <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
+                    <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
+                    <button id="tintAmountSwitch-high" class="tint-switch" data-value="high">High</button>
+                  </div>
+                </div>
+                <div>
+                  <label for="tintColorSwitch-col" style="font-size: 0.875rem; font-weight: normal;">
+                    Tint color
+                    <span class="helper">(Primary or Complimentary)</span>
+                  </label>
+                  <div class="switch-row">
+                    <button id="tintColorSwitch-primary" class="tint-switch active" data-value="primary">Primary</button>
+                    <button id="tintColorSwitch-complimentary" class="tint-switch" data-value="complimentary">Complimentary</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card scale-card">
+             
+              <label>Palettes</label>
+              
+             <span>Neutral (10 steps)</span>
+              <div class="scale-grid" id="scale-grid">
+                <p class="helper">Generate tokens to preview the scale.</p>
+              </div>
+              
+
+              
+              <span>Primary (10 steps)</span>
+              <div class="scale-grid" id="primary-scale-grid">
+                <p class="helper">Generate tokens to preview the primary color scale.</p>
+              </div>
+              
+            </section>
+
+            <section class="card">
+              <label>Semantic Mapping</label>
+              <p class="helper" style="margin-top: 0;">Override the default semantic token mappings from the palettes above.</p>
+              <div id="semantic-mapping-container">
+                <p class="helper">Generate tokens to configure semantic mappings.</p>
+              </div>
+            </section>
+
+            <section class="card matrix-card" style="display: none;">
+              <div class="status">
+                <span>WCAG contrast matrix (background × foreground)</span>
+                <span class="pill" id="matrix-pass-count">0</span>
+              </div>
+              <div class="matrix-grid" id="matrix-grid">
+                <p class="helper">Generate tokens to evaluate combinations.</p>
+              </div>
+              <p class="matrix-note" id="matrix-note">
+                Rows are backgrounds, columns are foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+              </p>
+            </section>
+
+            <section class="card" style="display: none;">
+              <div class="status">
+                <span>Primary color contrast matrix (background × foreground)</span>
+                <span class="pill" id="primary-matrix-pass-count">0</span>
+              </div>
+              <div class="matrix-grid" id="primary-matrix-grid">
+                <p class="helper">Generate tokens to evaluate combinations.</p>
+              </div>
+              <p class="matrix-note" id="primary-matrix-note">
+                Rows are primary backgrounds, columns are neutral + white foregrounds. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+              </p>
+            </section>
+          </div>
+
+          <!-- Column 2: Tabs (Preview / JSON Output) -->
+          <div class="column column-2">
+            <div class="tabs-container">
+              <div class="tabs-header">
+                <button class="tab-button active" data-tab="preview" aria-label="Preview"><ion-icon name="eye-outline"></ion-icon></button>
+                <button class="tab-button" data-tab="wcag" aria-label="WCAG Validation"><ion-icon name="accessibility-outline"></ion-icon></button>
+                <button class="tab-button" data-tab="output" aria-label="JSON Output"><ion-icon name="code-slash-outline"></ion-icon></button>
+              </div>
+
+              <!-- Preview Tab -->
+              <div class="tab-content active" id="preview-tab">
+                <section class="card semantic-preview">
+                  <div class="status">
+                    <span>Semantic tokens preview</span>
+                    <div class="theme-toggle">
+                      <button class="theme-btn active" data-theme="light">Light</button>
+                      <button class="theme-btn" data-theme="dark">Dark</button>
+                    </div>
+                  </div>
+                  <div id="semantic-preview-container">
+                    <p class="helper">Generate tokens to preview semantic surfaces and text.</p>
+                  </div>
+                </section>
+              </div>
+
+              <!-- WCAG Validation Tab -->
+              <div class="tab-content" id="wcag-tab">
+                <section class="card">
+                  <div class="status">
+                    <span>Semantic tokens WCAG validation</span>
+                    <span class="pill" id="semantic-matrix-pass-count">0</span>
+                  </div>
+                  <div>
+                    <label for="complianceLevel">Compliance level</label>
+                    <select id="complianceLevel">
+                      <option value="AA">AA (4.5:1 normal, 3:1 large)</option>
+                      <option value="AAA">AAA (7:1 normal, 4.5:1 large)</option>
+                    </select>
+                  </div>
+                  <div class="matrix-grid" id="semantic-matrix-grid">
+                    <p class="helper">Generate tokens to validate semantic color combinations.</p>
+                  </div>
+                  <p class="matrix-note" id="semantic-matrix-note">
+                    Rows are semantic surfaces, columns are semantic text/outline tokens. Green = passes normal text threshold, Blue = passes large text only, Red = fails.
+                  </p>
+                </section>
+              </div>
+
+              <!-- JSON Output Tab -->
+              <div class="tab-content" id="output-tab">
+                <section class="card">
+                  <div class="status">
+                    <span>Token output</span>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                      <span class="pill" id="token-count">0</span>
+                      <div class="output-format-toggle">
+                        <button class="format-btn active" data-format="json">JSON</button>
+                        <button class="format-btn" data-format="css">CSS</button>
+                      </div>
+                    </div>
+                  </div>
+                  <textarea
+                    id="output"
+                    placeholder="Generate tokens to view output."
+                    readonly
+                  ></textarea>
+                  <div class="actions">
+                    <button id="copy" disabled>Copy output</button>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <p>
+          Developed by <a href="https://www.linkedin.com/in/stmndesigner/">Stefanos Monastiridis</a>. All rights reserved.
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+    <script type="module" src="./layout.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7/dist/ionicons/ionicons.js"></script>
+  </body>
+</html>
+
