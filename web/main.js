@@ -612,6 +612,14 @@ function renderPrimaryColorMatrix(primaryScale, neutralScale) {
   if (primaryMatrixPassCount) primaryMatrixPassCount.textContent = `${passStrongCount} strong / ${passWeakCount} weak`;
 }
 
+// Helper to convert camelCase to readable format (e.g., "textPrimary" -> "Text Primary")
+function camelCaseToReadable(str) {
+  return str
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (s) => s.toUpperCase())
+    .trim();
+}
+
 function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
   const semanticMatrixGrid = document.getElementById("semantic-matrix-grid");
   const semanticMatrixPassCount = document.getElementById("semantic-matrix-pass-count");
@@ -738,7 +746,7 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
     surfaces.forEach((bg) => {
       const cell = document.createElement("div");
       cell.className = "matrix-cell header";
-      cell.textContent = bg.name;
+      cell.textContent = camelCaseToReadable(bg.name);
       grid.appendChild(cell);
     });
 
@@ -749,7 +757,7 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
     foregrounds.forEach((fg) => {
       const rowHeader = document.createElement("div");
       rowHeader.className = "matrix-cell header";
-      rowHeader.textContent = fg.name;
+      rowHeader.textContent = camelCaseToReadable(fg.name);
       grid.appendChild(rowHeader);
 
       surfaces.forEach((bg) => {
@@ -1630,7 +1638,7 @@ function renderSemanticMapping(tokens, scale, theme = 'light') {
 
     const labelEl = document.createElement("label");
     labelEl.textContent = label;
-    labelEl.style.flex = "0 0 200px";
+    labelEl.style.flex = "0 0 140px";
     labelEl.style.fontSize = "12px";
 
     const select = document.createElement("select");

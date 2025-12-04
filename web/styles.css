@@ -112,7 +112,12 @@ header p {
 .tab-content.active > .card {
   display: flex;
   flex-direction: column;
-  flex: 1; /* expand to fill tab height */
+  flex-shrink: 0; /* prevent cards from shrinking */
+}
+
+/* Only apply flex: 1 to cards with textareas (JSON output) to maximize their height */
+.tab-content.active > .card:has(textarea) {
+  flex: 1;
   min-height: 0;
 }
 
@@ -448,8 +453,6 @@ button:disabled {
 
 .tab-content {
   display: none;
-  flex: 1;
-  overflow-y: auto;
 }
 
 .tab-content.active {
@@ -458,6 +461,7 @@ button:disabled {
   gap: 16px;
   flex: 1; /* take all available height */
   min-height: 0; /* allow flex children to shrink */
+  overflow-y: auto; /* scroll the tab content, not individual cards */
 }
 
 footer {
