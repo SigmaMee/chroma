@@ -1,89 +1,119 @@
-# 🚀 Quick Start: Semantic Tokens
+# 🚀 Quick Start Guide
 
-## What Changed?
-The Colour Token Generator now automatically generates **semantic tokens** — high-level color tokens for surfaces, text, and outlines — directly from your neutral palette.
+## Getting Started
 
-## How to Use
+### 1. Run the App
 
-### Step 1: Open the App
-Visit `http://localhost:8000/index.html` in your browser (or open `web/index.html` directly)
+```sh
+cd web
+python3 -m http.server 8000
+# Open http://localhost:8000 in your browser
+```
 
-### Step 2: Set Your Colors
-- Enter a primary color (e.g., `#3366FF`)
-- Adjust saturation (0–30%)
-- Leave tint settings as-is or customize
-- Select compliance mode: **AA** (default) or **AAA**
+### 2. Generate Your First Palette
 
-### Step 3: Generate Tokens
-Click the **"Generate tokens"** button
+1. **Enter a primary colour** using the colour picker or type a hex value (e.g., `#3366FF`)
+2. **Select compliance level**: Choose AA (4.5:1 text contrast) or AAA (7:1 text contrast)
+3. **Adjust tint settings** (optional):
+   - **Amount**: Low (10%), Mid (15%), or High (20%) saturation for neutral palette
+   - **Colour**: Primary tint or Complementary tint mode
+4. Click **"Generate tokens"** to create your colour system
 
-### Step 4: View Semantic Tokens
+### 3. Explore Your Palette
 
-#### In the Preview Tab:
-- See **surface colors** with actual backgrounds
-- View **text hierarchy** (primary/secondary/tertiary samples)
-- Check **outline examples** with 2px borders
-- Review **compliance info** (thresholds, mode)
+#### Preview Tab 👁️
+- Switch between **Light** and **Dark** themes using the toggle buttons
+- See semantic tokens applied to surfaces, text, and components
+- Understand how your colours work together in real interfaces
 
-#### In the JSON Output Tab:
-- Find all semantic tokens under `color.semantic.*`
-- Each token has `$value` (reference) and `$type` ("color")
-- Example: `"surface": { "$value": "{color.palettes.neutral.50}", "$type": "color" }`
+#### Validation Tab ♿
+- **Semantic Matrix**: Review all semantic token combinations with pass/fail indicators
+- **Neutral Matrix**: Test every neutral colour combination for contrast
+- **Primary Matrix**: Validate primary colours against neutral foregrounds
+- Green = passes WCAG, Red = fails compliance
 
-## What Semantic Tokens Are Generated?
+#### Output Tab 💻
+- Toggle between **JSON** (W3C Design Tokens format) and **CSS** (custom properties)
+- Click **"Copy output"** to grab all generated tokens
+- Use in your design system, Tailwind config, or Style Dictionary
 
-| Category | Tokens | Purpose |
-|---|---|---|
-| **Surfaces** | surface, surfaceVariant, surfaceInverted, surfaceInvertedVariant | Light/dark backgrounds |
-| **Text** | text.primary, text.secondary, text.tertiary | Text on surfaces (3 hierarchy levels) |
-| **Text Inverted** | textInverted.primary, textInverted.secondary, textInverted.tertiary | Text on inverted surfaces |
-| **Outlines** | outline.default, outline.variant | Border/stroke colors |
-| **Outlines Inverted** | outlineInverted.default, outlineInverted.variant | Borders on inverted surfaces |
+## Key Features
 
-**Total: 14 semantic tokens**
+### Unique Neutral Palettes
+Every time you generate tokens, the neutral palette uses a **randomized saturation value between 10-20%**. This creates unique variations while maintaining your primary colour's hue.
 
-## Compliance Modes
+### Light & Dark Themes
+The app automatically generates semantic tokens for both themes:
+- **Light Theme**: Light surfaces (50) with dark text (900-600)
+- **Dark Theme**: Dark surfaces (950) with light text (50-400)
+- Tokens automatically invert when you switch themes
+
+### Semantic Token System
+
+Your palette generates:
+
+**Surfaces** (6 tokens)
+- `surface.base` - Main background
+- `surface.default` - Default surface
+- `surface.variant` - Alternative surface
+- `surface.inverted` - Inverted background
+- `surface.invertedVariant` - Inverted alternative
+- Primary surfaces with subtle/intense variants
+
+**Text** (6 tokens)
+- `text.primary` - Main text (highest contrast)
+- `text.secondary` - Secondary text
+- `text.tertiary` - Tertiary text
+- Plus inverse variants for dark backgrounds
+
+**Outlines** (6 tokens)
+- `outline.subtle` - Subtle borders
+- `outline.default` - Default borders
+- `outline.intense` - Strong borders
+- Plus neutral/primary variants
+
+**Primary-on-Text** (1 token)
+- `textOnPrimary` - Automatically selected for text on primary surfaces
+
+### Override System
+Don't like an automatically assigned token? Override it:
+1. Click the **"Override"** button next to any semantic token
+2. Select from seed colours, neutral palette, or primary palette
+3. Changes are immediately reflected in the preview
+4. Hover over any dropdown to see the current colour swatch
+
+## Understanding WCAG Compliance
 
 ### AA Mode (Default)
-- Text needs 4.5:1 contrast ratio
-- Outlines need 3:1 contrast ratio
-- WCAG AA standard compliance
+- Text requires **4.5:1** contrast ratio
+- Outlines require **3:1** contrast ratio
+- Meets WCAG 2.1 Level AA standards
 
-### AAA Mode
-- Text needs 7:1 contrast ratio
-- Outlines need 4.5:1 contrast ratio
-- WCAG AAA enhanced compliance
+### AAA Mode (Enhanced)
+- Text requires **7:1** contrast ratio
+- Outlines require **4.5:1** contrast ratio
+- Meets WCAG 2.1 Level AAA standards
 
-## Example Output
+The validation matrices show pass/fail status for every combination:
+- ✅ Green cell = passes your selected compliance level
+- ❌ Red cell = fails compliance
+- Hover over any cell to see the exact contrast ratio
+
+## Output Formats
+
+### JSON Format (Default)
+W3C Design Tokens specification with references:
 
 ```json
 {
   "color": {
-    "seed": { /* existing */ },
-    "palettes": { /* existing */ },
     "semantic": {
-      "surface": {
-        "$value": "{color.palettes.neutral.50}",
-        "$type": "color"
-      },
-      "text": {
-        "primary": {
-          "$value": "{color.palettes.neutral.900}",
-          "$type": "color"
-        },
-        "secondary": {
-          "$value": "{color.palettes.neutral.800}",
-          "$type": "color"
-        },
-        "tertiary": {
-          "$value": "{color.palettes.neutral.600}",
-          "$type": "color"
-        }
-      },
-      "outline": {
-        "default": {
-          "$value": "{color.palettes.neutral.800}",
-          "$type": "color"
+      "light": {
+        "surface": {
+          "base": {
+            "$value": "{color.palettes.neutral.50}",
+            "$type": "color"
+          }
         }
       }
     }
@@ -91,51 +121,44 @@ Click the **"Generate tokens"** button
 }
 ```
 
-## Key Features
+### CSS Format
+Ready-to-use CSS custom properties:
 
-✅ **Automatic** - Generated instantly from your palette  
-✅ **Accessible** - Meets WCAG AA/AAA standards  
-✅ **Configurable** - Choose compliance level  
-✅ **Visual** - See surfaces and text hierarchy  
-✅ **Standard** - W3C design token format  
-✅ **Live** - Updates as you change inputs  
+```css
+:root {
+  --color-semantic-light-surface-base: var(--color-palettes-neutral-50);
+  --color-semantic-light-text-primary: var(--color-palettes-neutral-900);
+}
+```
 
-## How It Works
+## Tips & Tricks
 
-1. **Surface Selection**: Finds the neutral color with least contrast against white (light surface) and black (dark surface)
+💡 **Generate multiple times** - Each generation creates unique neutral variations due to randomized saturation  
+💡 **Compare themes** - Switch between Light/Dark in preview to ensure consistency  
+💡 **Check all matrices** - Don't just trust semantic tokens, validate all neutral and primary combinations  
+💡 **Use overrides wisely** - The automatic selection is WCAG-compliant, overrides may break accessibility  
+💡 **Export both formats** - Use JSON for design tools, CSS for immediate web implementation  
 
-2. **Text Search**: Scans through darker colors until finding ones that meet your compliance threshold (4.5:1 for AA, 7:1 for AAA)
+## What's Included
 
-3. **Outline Search**: Similar to text but with lower thresholds (3:1 for AA, 4.5:1 for AAA)
+✅ 10-step neutral scale (50-950)  
+✅ 10-step primary scale (50-950)  
+✅ 19 semantic tokens (surfaces, text, outlines)  
+✅ Light & dark theme variants  
+✅ WCAG AA/AAA validation  
+✅ Interactive preview with theme switching  
+✅ JSON & CSS export formats  
+✅ Manual override system  
+✅ Real-time contrast matrices  
 
-4. **Reference Creation**: All tokens reference palette colors using `{color.palettes.neutral.XXX}` format
+## Next Steps
 
-5. **Output Generation**: Creates W3C design token structure with all 14 semantic tokens
-
-## Tips
-
-💡 **Customize compliance**: Change AA/AAA mode to see different text tokens  
-💡 **Copy output**: Click "Copy output" to copy all tokens to clipboard  
-💡 **Adjust primary**: Change primary color to regenerate everything  
-💡 **Vary saturation**: Try different saturation levels (0–30%) for different neutral bases  
-
-## What's New
-
-| Before | After |
-|---|---|
-| Only palette tokens | Palette + semantic tokens |
-| No guidance on which colors to use where | Clear surface/text/outline guidance |
-| Manual color selection | Automatic semantic token generation |
-| No accessibility guidance | WCAG AA/AAA compliance built-in |
-
-## Questions?
-
-Check the documentation files for detailed technical information:
-- `SEMANTIC_TOKENS_README.md` - Full feature overview
-- `SEMANTIC_TOKENS_IMPLEMENTATION.md` - Technical details
-- `IMPLEMENTATION_SUMMARY.md` - Complete implementation notes
+- Experiment with different primary colours to see how the neutral palette adapts
+- Try switching between AA and AAA modes to see stricter compliance requirements
+- Use the override system to customize specific semantic tokens
+- Export your tokens and integrate them into your design system
+- Generate multiple times to find your preferred neutral palette variation
 
 ---
 
-**Version**: 1.0  
-**Status**: ✅ Ready to use
+**Need more details?** Check the full README.md for comprehensive feature documentation and implementation notes.

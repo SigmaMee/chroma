@@ -1,76 +1,116 @@
-# Colour Token Generator (Figma plugin)
+# Chroma - Colour Alchemy
 
-Generate shareable colour design tokens from either local paint styles or the current selection. The plugin has no build step and can run directly inside the Figma desktop app.
+A comprehensive colour token generator and design system tool that creates accessible, semantic colour palettes from a single primary colour.
 
 ## Features
 
-- Scan all local paint styles and convert them into JSON or CSS custom properties.
-- Derive tokens from the current selection (deduplicated by colour). Optionally include unnamed layers with auto-generated identifiers.
-- Automatic token name normalisation with optional prefixing (`color.brand.primary` → `--color.brand.primary`).
-- Copy-to-clipboard output and quick status feedback inside the plugin UI.
-- Greyscale helper: enter a primary hex colour, cap the saturation at 30%, and instantly derive the neutral base token plus a 9-step scale of lighter/darker variants that respect the seed hue & lightness.
-- WCAG AA checker: the UI renders a background × foreground matrix of every grey combination, highlighting the pairs that meet the 4.5:1 contrast requirement.
-- Responsive canvas: the plugin automatically opens at ~80% of the viewport width and 70% of its height (within Figma’s limits) so the scale and matrix stay visible.
+### Core Generation
+- **Intelligent Neutral Palette**: Automatically generates a 10-step neutral scale (50-950) from your primary colour with randomized saturation (10-20%) for unique variations
+- **Primary Colour Scale**: Creates a harmonious primary palette with 10 tonal variants
+- **Semantic Token System**: Automatically generates semantic tokens for surfaces, text, and outlines with WCAG compliance
+- **Light & Dark Themes**: Dual theme support with automatic token inversion for dark mode
+
+### Semantic Tokens
+- **Surface Tokens**: Base, default, variant, inverted, and inverted variant surfaces
+- **Primary Surface Tokens**: Primary surface with subtle and intense variants
+- **Text Tokens**: Primary, secondary, tertiary text with inverse variants
+- **Outline Tokens**: Subtle, default, and intense outlines for neutral and primary colours
+- **Automatic Text-on-Primary**: Smart contrast detection for text on primary surfaces
+
+### Validation & Preview
+- **WCAG Compliance**: Real-time contrast validation for AA/AAA standards
+- **Interactive Preview**: Live semantic token preview with theme switching
+- **Contrast Matrices**: Visual grids showing all colour combinations with pass/fail indicators
+- **Override System**: Manual token mapping overrides with live preview updates
+
+### Export Options
+- **JSON Output**: W3C Design Tokens format with nested structure
+- **CSS Variables**: Ready-to-use CSS custom properties with semantic naming
+- **Copy to Clipboard**: One-click export of generated tokens
+
+### User Experience
+- **Icon-Based Navigation**: Clean tab interface with ionicons
+- **Responsive Layout**: Viewport-optimized with independent column scrolling
+- **Visual Feedback**: Color swatches, pills, and status indicators throughout
+- **Accessibility**: ARIA labels and keyboard navigation support
 
 ## Project structure
 
 ```
-token-generator/
-├── code.js        # Main plugin controller (Figma scene access)
-├── manifest.json  # Figma plugin manifest (API v1)
-├── ui.html        # Plugin UI (vanilla HTML/CSS/JS)
-├── web/           # Standalone browser version (HTML/CSS/JS)
-└── README.md
+chroma/
+├── web/                    # Web application
+│   ├── index.html         # Main application structure
+│   ├── main.js            # Token generation logic
+│   ├── layout.js          # Viewport height management
+│   ├── styles.css         # Application styling
+│   └── preview-template   # Semantic preview template
+├── README.md              # This file
+└── QUICK_START.md         # Quick start guide
 ```
 
 ## Getting started
 
-1. Open **Figma Desktop** → **Plugins** → **Development** → **Import plugin from manifest…**.
-2. Select the `manifest.json` file in this folder.
-3. Run the plugin via **Plugins → Development → Colour Token Generator**.
-
-## Usage
-
-1. Choose a source:
-   - **Local paint styles** scans all solid paint styles in the file.
-   - **Current selection** walks each selected node (and its descendants) looking for visible solid fills.
-2. Adjust the **Primary colour** and **Greyscale saturation** inputs (0 = neutral grey, max 30%). The live preview shows the derived base grey plus a 9-step scale.
-3. Pick an output format (`JSON tokens` or `CSS custom properties`).
-4. (Optional) Provide a token prefix (e.g. `color.light`).
-5. Hit **Generate tokens**. Copy the generated output and drop it into your design system repository. The derived base grey token plus the 9-step scale is appended to the collected paint styles/nodes, and the WCAG matrix updates to show all compliant pairings.
-
-## Web app version
-
-The `web/` folder contains a dependency-free version of the tool that runs in any modern browser.
-
-### Run it locally
+### Run locally
 
 ```sh
 # From the repo root
 cd web
-# start a quick static server (choose one you already have installed)
-npx serve .
-# ...or simply open index.html directly in your browser
+python3 -m http.server 8000
+# Open http://localhost:8000 in your browser
 ```
 
-### Feature parity
+## Usage
 
-- Primary colour input, saturation slider (0–30 %), optional token prefix, JSON/CSS export, copy-to-clipboard
-- Derived greyscale preview + 9-step scale identical to the plugin logic
-- WCAG AA contrast matrix showing every background × foreground combination that meets the 4.5:1 threshold
-- All calculations run locally; no data leaves the browser
+1. **Enter a primary colour** (hex format) or use the colour picker
+2. **Select compliance level** (AA or AAA) for contrast validation
+3. **Choose tint settings**:
+   - Amount: Low, Mid, or High saturation
+   - Colour: Primary or Complementary tint mode
+4. **Generate tokens** - each generation creates unique neutral variations
+5. **Preview & validate**:
+   - Switch between Light/Dark themes in Preview tab
+   - Check WCAG compliance in Validation tab
+   - Review contrast matrices for all combinations
+6. **Override tokens** (optional) in the Semantic Mapping panel
+7. **Export** as JSON or CSS from the Output tab
+
+## Key Features Explained
+
+### Randomized Neutral Generation
+Each token generation applies a random saturation value (10-20%) to create unique neutral palettes while maintaining the primary colour's hue. This ensures variety across generations.
+
+### Semantic Token System
+The app automatically generates semantic tokens following a structured hierarchy:
+- **Light Theme**: Uses light surfaces with dark text
+- **Dark Theme**: Inverts surfaces and text for dark mode compatibility
+- **Automatic Mapping**: Intelligent selection of tokens based on contrast ratios
+
+### WCAG Validation
+Three validation modes:
+- **Semantic Matrix**: Validates semantic token combinations
+- **Neutral Matrix**: Tests all neutral scale combinations
+- **Primary Matrix**: Tests primary colours against neutral foregrounds
+
+### Override System
+Manual control over semantic token assignments with live preview:
+- Select from seed colours, neutral palette, or primary palette
+- Changes immediately reflected in preview
+- Maintains WCAG compliance validation
 
 ## Implementation notes
 
-- Only solid paints are supported. Colors with opacity include the alpha channel (e.g. `#FFAA0080`).
-- When scanning selections, the plugin deduplicates by hex value to avoid repeated entries.
-- Node names are used for token names. Enable *“Include unnamed layers”* if you want auto-numbered tokens for anonymous layers (e.g. `layer-1`).
-- The UI is intentionally lightweight; no bundler or dependencies are required. You can extend it with any framework by adding a build step if needed.
-- The greyscale generator reuses the seed hue/lightness, caps saturation to 30%, and outputs up to 4 lighter / 5 darker variants (or all dark/light variants when the base sits near the extremes) to always produce a 9-token scale.
+- Pure vanilla JavaScript - no build step or dependencies required
+- All colour calculations performed client-side
+- HSL-based colour manipulation for accurate tonal scales
+- Dynamic viewport height management for optimal layout
+- Ionicons for consistent icon system
+- CSS Grid and Flexbox for responsive layout
 
-## Next ideas
+## Roadmap
 
-- Support gradients & effects by translating them into multi-stop tokens.
-- Export directly to Style Dictionary, Tokens Studio JSON, or Tailwind config.
-- Allow syncing tokens back into paint styles from imported JSON.
-
+- [ ] Figma plugin version for direct integration
+- [ ] Additional colour formats (RGB, HSB)
+- [ ] Export to popular design token formats (Style Dictionary, Tokens Studio)
+- [ ] Gradient and multi-colour palette support
+- [ ] Colour harmony modes (triadic, tetradic, analogous)
+- [ ] Save/load palette presets
