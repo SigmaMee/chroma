@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Colour Token Generator (Web)</title>
+    <title>Chroma - Colour Alchemy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -136,9 +136,9 @@
           <div class="column column-2">
             <div class="tabs-container">
               <div class="tabs-header">
-                <button class="tab-button active" data-tab="preview">Preview</button>
-                <button class="tab-button" data-tab="wcag">WCAG Validation</button>
-                <button class="tab-button" data-tab="output">JSON Output</button>
+                <button class="tab-button active" data-tab="preview" aria-label="Preview"><ion-icon name="eye-outline"></ion-icon></button>
+                <button class="tab-button" data-tab="wcag" aria-label="WCAG Validation"><ion-icon name="accessibility-outline"></ion-icon></button>
+                <button class="tab-button" data-tab="output" aria-label="JSON Output"><ion-icon name="code-slash-outline"></ion-icon></button>
               </div>
 
               <!-- Preview Tab -->
@@ -185,11 +185,17 @@
                 <section class="card">
                   <div class="status">
                     <span>Token output</span>
-                    <span class="pill" id="token-count">0</span>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                      <span class="pill" id="token-count">0</span>
+                      <div class="output-format-toggle">
+                        <button class="format-btn active" data-format="json">JSON</button>
+                        <button class="format-btn" data-format="css">CSS</button>
+                      </div>
+                    </div>
                   </div>
                   <textarea
                     id="output"
-                    placeholder="Generate tokens to view JSON output."
+                    placeholder="Generate tokens to view output."
                     readonly
                   ></textarea>
                   <div class="actions">
@@ -204,13 +210,15 @@
 
       <footer>
         <p>
-          Developed by <a href="https://www.linkedin.com/in/stmndesigner/">Stefanos Monastiridis</a> all rights reserved.
+          Developed by <a href="https://www.linkedin.com/in/stmndesigner/">Stefanos Monastiridis</a>. All rights reserved.
         </p>
       </footer>
     </div>
 
     <script type="module" src="./main.js"></script>
     <script type="module" src="./layout.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7/dist/ionicons/ionicons.js"></script>
   </body>
 </html>
 

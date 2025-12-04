@@ -14,9 +14,10 @@ let currentTintLevel = "low";
 let currentTintColorMode = "primary";
 const semanticOverrides = {};
 let currentTheme = 'light'; // Track current theme for semantic preview
+let currentOutputFormat = 'json'; // Track current output format
 
 function generateRandomTintAmounts() {
-  tintAmounts.low = 1 + Math.random() * 0.4;
+  tintAmounts.low = 10 + Math.random() * 10; // 10-20% for saturation between 0.1 and 0.2
   tintAmounts.mid = 9 + Math.random() * 0.5;
   tintAmounts.high = 16 + Math.random() * 0.65;
 }
@@ -189,7 +190,7 @@ function deriveGreyscaleColor(primaryHex, saturationPercent, tintMode = "primary
   const derivedRgb = hslToRgb(hsl.h, saturation, hsl.l);
   return {
     hex: rgbToHex(derivedRgb.r, derivedRgb.g, derivedRgb.b),
-    hsl,
+    hsl: { h: hsl.h, s: saturation, l: hsl.l },
     saturation,
   };
 }
@@ -1950,6 +1951,11 @@ function renderSemanticMapping(tokens, scale, theme = 'light') {
 
 function generateTokens() {
   try {
+    // Generate new random tint amounts each time tokens are generated
+    generateRandomTintAmounts();
+    // Update the saturation input to reflect the new random value
+    satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
+    
     const derived = updateDerivedPreview();
     if (!derived) {
       output.value = "Invalid primary colour.";
@@ -2017,8 +2023,7 @@ function generateTokens() {
 
     const total = countLeaves(tokens);
     tokenCount.textContent = total.toString();
-    const format = formatSelect ? formatSelect.value : "json";
-    output.value = formatTokens(tokens, format);
+    output.value = formatTokens(tokens, currentOutputFormat);
     copyBtn.disabled = total === 0;
   } catch (err) {
     console.error("generateTokens error", err);
@@ -2096,6 +2101,21 @@ themeButtons.forEach((button) => {
     // Update current theme
     currentTheme = event.target.dataset.theme;
     // Re-generate tokens with new theme
+    generateTokens();
+  });
+});
+
+// Output format toggle event listeners
+const formatButtons = document.querySelectorAll(".format-btn");
+formatButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    // Remove active class from all format buttons
+    formatButtons.forEach((btn) => btn.classList.remove("active"));
+    // Add active class to clicked button
+    event.target.classList.add("active");
+    // Update current output format
+    currentOutputFormat = event.target.dataset.format;
+    // Re-generate tokens with new format
     generateTokens();
   });
 });
