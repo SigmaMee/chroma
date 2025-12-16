@@ -1,3 +1,81 @@
+// ============================================================================
+// ERROR HANDLING & VALIDATION
+// ============================================================================
+
+// Validation utilities
+const Validator = {
+  isValidHex(hex) {
+    if (!hex || typeof hex !== 'string') return false;
+    const cleaned = hex.trim();
+    return /^#[0-9A-Fa-f]{6}$/.test(cleaned);
+  },
+
+  normalizeHex(hex) {
+    if (!hex) return null;
+    let cleaned = hex.trim().toUpperCase();
+    if (!cleaned.startsWith('#')) cleaned = '#' + cleaned;
+    return this.isValidHex(cleaned) ? cleaned : null;
+  },
+
+  isValidNumber(value, min = -Infinity, max = Infinity) {
+    const num = parseFloat(value);
+    return !isNaN(num) && num >= min && num <= max;
+  },
+
+  clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  },
+
+  // Check for edge case colors that might cause issues
+  isExtremeColor(hex) {
+    if (!this.isValidHex(hex)) return false;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    
+    // Pure black, pure white, or very close to them
+    const sum = r + g + b;
+    return sum < 10 || sum > 755;
+  }
+};
+
+// Error notification system
+const ErrorHandler = {
+  showError(message, duration = 5000) {
+    console.error(message);
+    
+    // Create error notification element
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-notification';
+    errorDiv.textContent = message;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #dc2626;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10000;
+      max-width: 400px;
+      animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+      errorDiv.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => errorDiv.remove(), 300);
+    }, duration);
+  },
+
+  handleGenerationError(error, context = 'Token generation') {
+    console.error(`${context} error:`, error);
+    this.showError(`${context} failed. Please try a different color or refresh the page.`);
+  }
+};
+
 const primaryInput = document.getElementById("primaryColor");
 const primarySwatch = document.getElementById("primarySwatch");
 const primaryColorPicker = document.getElementById("primaryColorPicker");
@@ -51,36 +129,45 @@ function initWelcomePage() {
 
   welcomeGenerateBtn.addEventListener("click", () => {
     const hexValue = welcomePrimaryHex.value;
-    console.log("CTA clicked, hexValue:", hexValue);
-    if (/^#[0-9A-Fa-f]{6}$/.test(hexValue)) {
-      console.log("Hex validation passed");
-      try {
-        // Set the primary color in the main app
-        primaryInput.value = hexValue;
-        primaryColorPicker.value = hexValue;
-        if (typeof updateSwatch === 'function') {
-          updateSwatch();
-        }
-        
-        // Hide welcome page and show main app
-        welcomePage.style.display = "none";
-        mainApp.style.display = "grid";
-        
-        // Force a layout recalculation
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-          
-          // Auto-generate tokens
-          if (typeof generateTokens === 'function') {
-            generateTokens();
-          }
-          console.log("App switched to main view and tokens generated");
-        }, 100);
-      } catch (error) {
-        console.error("Error during transition:", error);
+    const normalized = Validator.normalizeHex(hexValue);
+    
+    if (!normalized) {
+      ErrorHandler.showError('Please enter a valid hex color (e.g., #3366FF)');
+      welcomePrimaryHex.classList.add('error');
+      setTimeout(() => welcomePrimaryHex.classList.remove('error'), 2000);
+      return;
+    }
+
+    if (Validator.isExtremeColor(normalized)) {
+      const proceed = confirm('This color is very close to pure black or white. Results may be limited. Continue anyway?');
+      if (!proceed) return;
+    }
+
+    try {
+      // Set the primary color in the main app
+      primaryInput.value = normalized;
+      primaryColorPicker.value = normalized;
+      welcomePrimaryHex.value = normalized;
+      
+      if (typeof updateSwatch === 'function') {
+        updateSwatch();
       }
-    } else {
-      console.log("Hex validation failed for:", hexValue);
+      
+      // Hide welcome page and show main app
+      welcomePage.style.display = "none";
+      mainApp.style.display = "grid";
+      
+      // Force a layout recalculation
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        
+        // Auto-generate tokens
+        if (typeof generateTokens === 'function') {
+          generateTokens();
+        }
+      }, 100);
+    } catch (error) {
+      ErrorHandler.handleGenerationError(error, 'App initialization');
     }
   });
 
@@ -188,12 +275,22 @@ function hexToRgb(hex) {
 }
 
 function rgbToHex(r, g, b) {
+  // Validate and clamp RGB values
+  const clampedR = Validator.clamp(Math.round(r), 0, 255);
+  const clampedG = Validator.clamp(Math.round(g), 0, 255);
+  const clampedB = Validator.clamp(Math.round(b), 0, 255);
+  
   const toHex = (value) =>
-    Math.round(value).toString(16).padStart(2, "0").toUpperCase();
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    value.toString(16).padStart(2, "0").toUpperCase();
+  return `#${toHex(clampedR)}${toHex(clampedG)}${toHex(clampedB)}`;
 }
 
 function rgbToHsl(r, g, b) {
+  // Clamp values to valid range
+  r = Validator.clamp(r, 0, 255);
+  g = Validator.clamp(g, 0, 255);
+  b = Validator.clamp(b, 0, 255);
+  
   const rn = r / 255;
   const gn = g / 255;
   const bn = b / 255;
@@ -441,15 +538,21 @@ function relativeLuminance(rgb) {
 }
 
 function getContrastRatio(bgHex, fgHex) {
+  // Validate hex inputs
+  if (!Validator.isValidHex(bgHex) || !Validator.isValidHex(fgHex)) {
+    return null;
+  }
+  
   const bg = hexToRgb(bgHex);
   const fg = hexToRgb(fgHex);
   if (!bg || !fg) return null;
   const l1 = relativeLuminance(bg);
   const l2 = relativeLuminance(fg);
-  if (l1 === null || l2 === null) return null;
+  if (l1 === null || l2 === null || !isFinite(l1) || !isFinite(l2)) return null;
   const light = Math.max(l1, l2);
   const dark = Math.min(l1, l2);
-  return (light + 0.05) / (dark + 0.05);
+  const ratio = (light + 0.05) / (dark + 0.05);
+  return isFinite(ratio) ? ratio : null;
 }
 
 function formatTokens(tokens, format) {
@@ -2282,10 +2385,12 @@ function generateTokens() {
     output.value = formatTokens(tokens, currentOutputFormat);
     copyBtn.disabled = total === 0;
   } catch (err) {
-    console.error("generateTokens error", err);
+    console.error("generateTokens error:", err);
     console.error("Stack trace:", err.stack);
-    output.value = `Error generating tokens: ${err.message}`;
+    ErrorHandler.handleGenerationError(err);
+    output.value = `Error generating tokens: ${err.message}\\n\\nPlease try a different color or check the browser console for details.`;
     copyBtn.disabled = true;
+    tokenCount.textContent = "0";
   }
 }
 
@@ -2306,10 +2411,22 @@ if (primaryColorPicker) {
 
 primaryInput.addEventListener("input", () => {
   const normalized = normalizeHex(primaryInput.value);
-  if (normalized && primaryColorPicker) {
+  if (!normalized) {
+    primaryInput.classList.add('error');
+    setTimeout(() => primaryInput.classList.remove('error'), 2000);
+    return;
+  }
+  
+  if (primaryColorPicker) {
     primaryColorPicker.value = normalized;
   }
-  generateTokens();
+  primaryInput.value = normalized;
+  
+  try {
+    generateTokens();
+  } catch (error) {
+    ErrorHandler.handleGenerationError(error);
+  }
 });
 
 initTintAmountSwitches();
