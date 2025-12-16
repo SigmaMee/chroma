@@ -53,10 +53,43 @@ chroma/
 ### Run locally
 
 ```sh
-# From the repo root
+# Using npm
+npm start
+
+# Or manually with Python
 cd web
-python3 -m http.server 8000
-# Open http://localhost:8000 in your browser
+python3 -m http.server 8080
+# Open http://localhost:8080 in your browser
+```
+
+### Deploy to Vercel
+
+The easiest way to deploy is using Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SigmaMee/chroma)
+
+Or manually:
+```sh
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+### Deploy to Netlify
+
+Alternatively, deploy to Netlify:
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/SigmaMee/chroma)
+
+Or with Netlify CLI:
+```sh
+# Install Netlify CLI
+npm i -g netlify-cli
+
+# Deploy
+netlify deploy --prod --dir=web
 ```
 
 ## Usage
@@ -108,5 +141,11 @@ Manual control over semantic token assignments with live preview:
 
 ## Roadmap
 
+- [x] Colour harmony modes (complementary, analogous, triadic)
+- [x] WCAG outline contrast validation
+- [x] JSON configuration system
 - [ ] Figma plugin version for direct integration
-- [ ] Colour harmony modes (triadic, tetradic, analogous)
+- [ ] Token export in multiple formats (Style Dictionary, Tailwind, etc.)
+- [ ] Save/load palette presets
+- [ ] Token comparison view
+- [ ] Component preview library

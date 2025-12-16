@@ -1,0 +1,34 @@
+{
+  "name": "chroma-token-generator",
+  "version": "1.0.0",
+  "description": "Accessible design token generator with harmony modes and WCAG compliance checking",
+  "main": "web/main.js",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory web",
+    "dev": "python3 -m http.server 8080 --directory web",
+    "build": "npm run build:css && npm run build:js",
+    "build:css": "echo 'CSS minification placeholder'",
+    "build:js": "echo 'JS minification placeholder'",
+    "test": "echo 'No tests yet' && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SigmaMee/chroma.git"
+  },
+  "keywords": [
+    "design-tokens",
+    "color-palette",
+    "wcag",
+    "accessibility",
+    "design-system",
+    "color-harmony",
+    "contrast-checker"
+  ],
+  "author": "Stefanos Monastiridis",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
