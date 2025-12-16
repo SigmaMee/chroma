@@ -4,7 +4,18 @@
     <meta charset="UTF-8" />
     <title>Chroma - Colour Alchemy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Generate accessible design tokens from a single color with WCAG compliance checking" />
+    <meta name="theme-color" content="#5a7dff" />
     <link rel="stylesheet" href="./styles.css" />
+    <!-- Fallback message for very old browsers -->
+    <script>
+      // Check for essential browser features
+      if (!window.CSS || !window.CSS.supports || !('classList' in document.createElement('div'))) {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.body.innerHTML = '<div style="padding: 40px; text-align: center; font-family: sans-serif;"><h1>Browser Not Supported</h1><p>Please use a modern browser like Chrome, Firefox, Safari, or Edge.</p></div>';
+        });
+      }
+    </script>
   </head>
   <body>
     <!-- Welcome Page -->

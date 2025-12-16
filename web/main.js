@@ -114,6 +114,27 @@ const ErrorHandler = {
   }
 };
 
+// ============================================================================
+// BROWSER COMPATIBILITY
+// ============================================================================
+
+// Check for color input support and add fallback class if needed
+function checkColorInputSupport() {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'color');
+  const isSupported = input.type === 'color';
+  
+  if (!isSupported) {
+    document.body.classList.add('no-color-input');
+    console.warn('Color input not supported. Using text input fallback.');
+  }
+  
+  return isSupported;
+}
+
+// Initialize browser compatibility checks
+checkColorInputSupport();
+
 const primaryInput = document.getElementById("primaryColor");
 const primarySwatch = document.getElementById("primarySwatch");
 const primaryColorPicker = document.getElementById("primaryColorPicker");
