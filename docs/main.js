@@ -105,9 +105,9 @@ let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
 
 function generateRandomTintAmounts() {
-  tintAmounts.low = 10 + Math.random() * 10; // 10-20% for saturation between 0.1 and 0.2
-  tintAmounts.mid = 9 + Math.random() * 0.5;
-  tintAmounts.high = 16 + Math.random() * 0.65;
+  tintAmounts.low = 10 + Math.random() * 8;    // 10-18%
+  tintAmounts.mid = 19 + Math.random() * 6;    // 19-25%
+  tintAmounts.high = 26 + Math.random() * 9;   // 26-35%
 }
 
 const prefixInput = document.getElementById("prefix");
