@@ -749,6 +749,11 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
         current = current[key];
         if (!current) return null;
       }
+      if (!current.$value) return null;
+      // Recursively resolve if the result is another reference
+      if (current.$value.startsWith("{")) {
+        return resolveHex(current);
+      }
       return current.$value;
     }
     return null;
@@ -790,9 +795,11 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
   }
   if (semantic.outline && semantic.outline.neutral) {
     if (semantic.outline.neutral.outlineDefault) neutralText.push({ name: "outlineDefault", hex: resolveHex(semantic.outline.neutral.outlineDefault) });
-    if (semantic.outline.neutral.outlineVariant) neutralText.push({ name: "outlineVariant", hex: resolveHex(semantic.outline.neutral.outlineVariant) });
+    if (semantic.outline.neutral.outlineSubtle) neutralText.push({ name: "outlineSubtle", hex: resolveHex(semantic.outline.neutral.outlineSubtle) });
+    if (semantic.outline.neutral.outlineIntense) neutralText.push({ name: "outlineIntense", hex: resolveHex(semantic.outline.neutral.outlineIntense) });
     if (semantic.outline.neutral.outlineInverse) invertedText.push({ name: "outlineInverse", hex: resolveHex(semantic.outline.neutral.outlineInverse) });
-    if (semantic.outline.neutral.outlineInverseVariant) invertedText.push({ name: "outlineInverseVariant", hex: resolveHex(semantic.outline.neutral.outlineInverseVariant) });
+    if (semantic.outline.neutral.outlineInverseSubtle) invertedText.push({ name: "outlineInverseSubtle", hex: resolveHex(semantic.outline.neutral.outlineInverseSubtle) });
+    if (semantic.outline.neutral.outlineInverseIntense) invertedText.push({ name: "outlineInverseIntense", hex: resolveHex(semantic.outline.neutral.outlineInverseIntense) });
   }
   if (semantic.outline && semantic.outline.primary) {
     if (semantic.outline.primary.outlinePrimary) neutralText.push({ name: "outlinePrimary", hex: resolveHex(semantic.outline.primary.outlinePrimary) });
@@ -868,7 +875,7 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
         let cellClass = "fail";
         
         // Determine threshold based on whether this is text or outline
-        const isOutline = fg.name.startsWith("outline.");
+        const isOutline = fg.name.startsWith("outline");
         const threshold = isOutline ? outlineThreshold : normalThreshold;
         const largeTxtThreshold = isOutline ? outlineThreshold : largeThreshold;
 
@@ -884,6 +891,7 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
 
         const cell = document.createElement("div");
         cell.className = `matrix-cell ${cellClass}`;
+        // Always show the ratio, even if below threshold
         cell.textContent = typeof ratio === "number" ? `${ratio.toFixed(1)}×` : "—";
         grid.appendChild(cell);
       });
@@ -1450,11 +1458,9 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     if (!root[colorKey].semantic.dark.surface.primary) root[colorKey].semantic.dark.surface.primary = {};
     if (!root[colorKey].semantic.dark.outline.primary) root[colorKey].semantic.dark.outline.primary = {};
 
-    // surfacePrimary & outlinePrimary -> always use seed (same for light and dark)
+    // surfacePrimary -> always use seed (same for light and dark)
     root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
     root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
 
     // Find the primary seed in the scale and pick adjacent tokens
     const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
@@ -1475,9 +1481,109 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       return m ? m[0] : null;
     }
     
+    // Helper to find color that meets contrast threshold against surface variant
+    function findOutlineColorFromPrimary(backgroundHex, startIdx, direction = 'darker') {
+      const outlineThreshold = 3.0;
+      
+      if (direction === 'darker') {
+        // Search toward darker colors (higher indices)
+        for (let i = startIdx; i < primaryScaleEntries.length; i++) {
+          const ratio = getContrastRatio(backgroundHex, primaryScaleEntries[i].hex);
+          if (typeof ratio === "number" && ratio >= outlineThreshold) {
+            return { index: i, color: primaryScaleEntries[i] };
+          }
+        }
+      } else {
+        // Search toward lighter colors (lower indices)
+        for (let i = startIdx; i >= 0; i--) {
+          const ratio = getContrastRatio(backgroundHex, primaryScaleEntries[i].hex);
+          if (typeof ratio === "number" && ratio >= outlineThreshold) {
+            return { index: i, color: primaryScaleEntries[i] };
+          }
+        }
+      }
+      
+      // Fallback to seed if nothing found
+      return seedIndex >= 0 ? { index: seedIndex, color: primaryScaleEntries[seedIndex] } : null;
+    }
+    
+    // Check if seed primary meets 3:1 contrast with surface variant for outline
+    let outlineDefaultIndex = seedIndex;
+    let outlineDefaultColor = seedIndex >= 0 ? primaryScaleEntries[seedIndex] : null;
+    
+    if (semanticNeutral && semanticNeutral.surfaceVariant) {
+      const surfaceVariantHex = semanticNeutral.surfaceVariant.hex;
+      const contrastWithSeed = getContrastRatio(surfaceVariantHex, primaryData.hex);
+      
+      // If seed doesn't meet threshold, find a color that does
+      if (typeof contrastWithSeed !== "number" || contrastWithSeed < 3.0) {
+        // Try searching darker first (likely for light backgrounds)
+        const result = findOutlineColorFromPrimary(surfaceVariantHex, seedIndex, 'darker');
+        if (result) {
+          outlineDefaultIndex = result.index;
+          outlineDefaultColor = result.color;
+        }
+      }
+    }
+    
+    // Set outline primary default from the validated color
+    if (outlineDefaultColor) {
+      const defaultLabel = getPrimaryLabel(outlineDefaultColor);
+      const defaultRef = defaultLabel ? `{color.palettes.primary.${defaultLabel}}` : "{color.seed.primary}";
+      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || defaultRef, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || defaultRef, $type: "color" };
+    } else {
+      // Fallback to seed
+      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+    }
+    
     let subtleLabel = null;
     let intenseLabel = null;
     
+    // Derive subtle and intense outline from the validated default outline index
+    let outlineSubtleLabel = null;
+    let outlineIntenseLabel = null;
+    
+    if (outlineDefaultIndex !== -1) {
+      // Subtle outline: 2-3 steps lighter (lower index) - can be below threshold
+      if (outlineDefaultIndex >= 2) {
+        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 2]);
+      } else if (outlineDefaultIndex >= 1) {
+        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 1]);
+      } else {
+        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex]);
+      }
+      
+      // Intense outline: 2 steps darker (higher index)
+      if (outlineDefaultIndex + 2 < primaryScaleEntries.length) {
+        outlineIntenseLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 2]);
+      } else if (outlineDefaultIndex + 1 < primaryScaleEntries.length) {
+        outlineIntenseLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 1]);
+      } else {
+        outlineIntenseLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex]);
+      }
+    }
+    
+    if (outlineSubtleLabel) {
+      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${outlineSubtleLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${outlineSubtleLabel}}`, $type: "color" };
+    } else {
+      // Fallback to seed if no subtle variant found
+      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || "{color.seed.primary}", $type: "color" };
+    }
+    
+    if (outlineIntenseLabel) {
+      root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${outlineIntenseLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${outlineIntenseLabel}}`, $type: "color" };
+    } else {
+      // Fallback to seed if no intense variant found
+      root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || "{color.seed.primary}", $type: "color" };
+    }
+    
+    // Surface primary variants: use seed index for subtle/intense calculation
     if (seedIndex !== -1) {
       // Subtle: prefer three steps lighter (e.g., 500 -> 200)
       if (seedIndex >= 3) {
@@ -1495,16 +1601,12 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     
     if (subtleLabel) {
       root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
       root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
     }
     
     if (intenseLabel) {
       root[colorKey].semantic.light.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
       root[colorKey].semantic.dark.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
     }
 
     // textOnPrimary: check contrast between primary surface (seed) and textPrimary from neutral scale
@@ -1666,6 +1768,12 @@ function generateSemanticFromNeutral(neutralScale, complianceMode = "AA") {
     } else {
       outlineTokens.intense = neutralScale[defaultIdx]; // fallback to default
     }
+  } else {
+    // If no default found, use fallback from the darkest available
+    const fallbackIdx = neutralScale.length - 1;
+    outlineTokens.default = neutralScale[fallbackIdx];
+    outlineTokens.subtle = neutralScale[Math.max(0, fallbackIdx - 2)];
+    outlineTokens.intense = neutralScale[fallbackIdx];
   }
 
   // Outline inverted: find the first light color that passes threshold, then derive subtle/intense from it
@@ -1700,6 +1808,12 @@ function generateSemanticFromNeutral(neutralScale, complianceMode = "AA") {
     } else {
       outlineInvertedTokens.intense = neutralScale[defaultIdxInverted]; // fallback
     }
+  } else {
+    // If no default found, use fallback from the lightest available
+    const fallbackIdx = 0;
+    outlineInvertedTokens.default = neutralScale[fallbackIdx];
+    outlineInvertedTokens.subtle = neutralScale[Math.min(neutralScale.length - 1, fallbackIdx + 2)];
+    outlineInvertedTokens.intense = neutralScale[fallbackIdx];
   }
 
   return {
