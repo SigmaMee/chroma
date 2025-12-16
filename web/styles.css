@@ -794,3 +794,88 @@ input[type="color"] {
   transform: translateY(0);
 }
 
+/* Harmony mode cards */
+.harmony-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.harmony-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.harmony-header h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text);
+}
+
+.harmony-header p {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.harmony-description {
+  min-height: 2.8em;
+}
+
+.harmony-swatches {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.harmony-swatch {
+  flex: 1;
+  height: 40px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.harmony-swatch .swatch-color {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.harmony-swatch:hover {
+  border-color: var(--accent-light);
+  transform: translateY(-2px);
+}
+
+.harmony-swatch.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(90, 125, 255, 0.15);
+}
+
+.harmony-swatch.active::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+

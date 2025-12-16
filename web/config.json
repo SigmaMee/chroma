@@ -1,0 +1,126 @@
+{
+  "welcomePage": {
+    "title": "Welcome to Chroma",
+    "subtitle": "Chroma is a colour alchemist. It transmutes a single colour in a full set of tokens including primary and neutral colour palettes and semantic token sets for light and dark mode. Currently in BETA",
+    "colorInputLabel": "Choose your primary colour",
+    "defaultColor": "#3366FF",
+    "ctaButton": "Begin the transmutation"
+  },
+  "mainApp": {
+    "title": "Chroma",
+    "subtitle": "Colour Alchemy",
+    "badge": "BETA"
+  },
+  "controls": {
+    "primaryColorLabel": "Primary colour (hex)",
+    "optionsLabel": "Options",
+    "harmonyModeLabel": "Tint mode",
+    "harmonyModeHelper": "(Choose tint color relationship)",
+    "tintAmountLabel": "Tint amount",
+    "tintAmountHelper": "",
+    "resetButton": "Reset",
+    "generateButton": "Generate tokens"
+  },
+  "harmonyModes": [
+    {
+      "id": "monochromatic",
+      "mode": "primary",
+      "variant": "",
+      "title": "Unity",
+      "description": "Pure tonal variation. All neutrals share identical temperature.",
+      "tooltip": "Monochromatic (same hue)"
+    },
+    {
+      "id": "complementary",
+      "mode": "complimentary",
+      "variant": "",
+      "title": "Opposites",
+      "description": "Maximum contrast, opposing warmth. Creates dramatic cool vs warm neutrals.",
+      "tooltip": "Complementary (180°)"
+    },
+    {
+      "id": "analogous-plus",
+      "mode": "analogous",
+      "variant": "plus",
+      "title": "Harmony",
+      "description": "Gentle variation. Subtle temperature shift within same color family.",
+      "tooltip": "Analogous +30°"
+    },
+    {
+      "id": "analogous-minus",
+      "mode": "analogous",
+      "variant": "minus",
+      "title": "Harmony",
+      "description": "Gentle variation. Subtle temperature shift within same color family.",
+      "tooltip": "Analogous -30°"
+    },
+    {
+      "id": "triadic-plus",
+      "mode": "triadic",
+      "variant": "plus",
+      "title": "Vibrance",
+      "description": "Balanced but vibrant, evenly spaced. Moderate contrast with balanced temperature.",
+      "tooltip": "Triadic +120°"
+    },
+    {
+      "id": "triadic-minus",
+      "mode": "triadic",
+      "variant": "minus",
+      "title": "Vibrance",
+      "description": "Balanced but vibrant, evenly spaced. Moderate contrast with balanced temperature.",
+      "tooltip": "Triadic -120°"
+    }
+  ],
+  "tintAmounts": [
+    {
+      "id": "low",
+      "label": "Low"
+    },
+    {
+      "id": "mid",
+      "label": "Mid"
+    },
+    {
+      "id": "high",
+      "label": "High"
+    }
+  ],
+  "palettes": {
+    "neutralLabel": "Neutral",
+    "primaryLabel": "Primary",
+    "generateHelperText": "Generate tokens to preview the scale."
+  },
+  "semanticMapping": {
+    "label": "Semantic Mapping",
+    "helperText": "Override the default semantic token mappings from the palettes above.",
+    "generateHelperText": "Generate tokens to configure semantic mappings."
+  },
+  "tabs": {
+    "preview": "Preview",
+    "wcag": "WCAG Validation",
+    "output": "JSON Output"
+  },
+  "preview": {
+    "label": "Semantic tokens preview",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "generateHelperText": "Generate tokens to preview semantic surfaces and text."
+  },
+  "wcag": {
+    "label": "Semantic contrast matrix",
+    "complianceLabel": "WCAG compliance level",
+    "generateHelperText": "Generate tokens to see WCAG contrast validation."
+  },
+  "output": {
+    "label": "Token output",
+    "formatLabel": "Output format",
+    "copyButton": "Copy output",
+    "tokenCountLabel": "tokens"
+  },
+  "footer": {
+    "text": "Developed by",
+    "linkText": "Stefanos Monastiridis",
+    "linkUrl": "https://www.linkedin.com/in/stmndesigner/",
+    "copyright": "All rights reserved."
+  }
+}

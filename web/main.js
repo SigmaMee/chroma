@@ -269,9 +269,23 @@ function deriveGreyscaleColor(primaryHex, saturationPercent, tintMode = "primary
   }
   let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
   
-  // If complimentary mode, shift hue by 180 degrees
+  // Apply hue shift based on harmony mode
+  let hueShift = 0;
   if (tintMode === "complimentary") {
-    hsl = { ...hsl, h: (hsl.h - 180 + 360) % 360 };
+    hueShift = 180;
+  } else if (tintMode === "analogous-plus") {
+    hueShift = 30;
+  } else if (tintMode === "analogous-minus") {
+    hueShift = -30;
+  } else if (tintMode === "triadic-plus") {
+    hueShift = 120;
+  } else if (tintMode === "triadic-minus") {
+    hueShift = -120;
+  }
+  // primary mode has no shift (hueShift = 0)
+  
+  if (hueShift !== 0) {
+    hsl = { ...hsl, h: (hsl.h + hueShift + 360) % 360 };
   }
   
   const saturation = clamp(Number(saturationPercent) / 100 || 0, 0, 0.3);
@@ -1200,7 +1214,47 @@ function updateDerivedPreview() {
   derivedHexInput.value = derived.hex;
   derivedSwatch.style.background = derived.hex;
   derivedLabel.textContent = derived.hex;
+  
+  // Update harmony card swatches with current primary color
+  updateHarmonySwatches();
+  
   return derived;
+}
+
+function updateHarmonySwatches() {
+  const primaryColor = primaryInput.value;
+  const saturation = 14; // Mid-range saturation for preview
+  
+  // Define all harmony modes and their hue shifts
+  const modes = [
+    { selector: '[data-mode="complimentary"]', shift: 180 },
+    { selector: '[data-mode="analogous"][data-variant="plus"]', shift: 30 },
+    { selector: '[data-mode="analogous"][data-variant="minus"]', shift: -30 },
+    { selector: '[data-mode="triadic"][data-variant="plus"]', shift: 120 },
+    { selector: '[data-mode="triadic"][data-variant="minus"]', shift: -120 },
+    { selector: '[data-mode="primary"]', shift: 0 },
+  ];
+  
+  modes.forEach(({ selector, shift }) => {
+    const swatch = document.querySelector(selector);
+    if (swatch) {
+      const normalized = normalizeHex(primaryColor);
+      if (normalized) {
+        const rgb = hexToRgb(normalized);
+        if (rgb) {
+          let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+          hsl = { ...hsl, h: (hsl.h + shift + 360) % 360 };
+          const sat = clamp(saturation / 100, 0, 0.3);
+          const derivedRgb = hslToRgb(hsl.h, sat, hsl.l);
+          const derivedHex = rgbToHex(derivedRgb.r, derivedRgb.g, derivedRgb.b);
+          const swatchColor = swatch.querySelector('.swatch-color');
+          if (swatchColor) {
+            swatchColor.style.background = derivedHex;
+          }
+        }
+      }
+    }
+  });
 }
 
 function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) {
@@ -2144,37 +2198,61 @@ primaryInput.addEventListener("input", () => {
   generateTokens();
 });
 
-// Tint amount switch listeners
-const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
-tintAmountSwitches.forEach((button) => {
-  button.addEventListener("click", (event) => {
-    // Remove active class from all amount buttons
-    tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
-    // Add active class to clicked button
-    event.target.classList.add("active");
-    // Update current tint level
-    currentTintLevel = event.target.dataset.value;
-    // Update hidden saturation input with calculated value
-    satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
-    // Generate tokens
-    generateTokens();
-  });
-});
+initTintAmountSwitches();
+initHarmonySwatches();
 
-// Tint color switch listeners
-const tintColorSwitches = document.querySelectorAll("#tintColorSwitch-primary, #tintColorSwitch-complimentary");
-tintColorSwitches.forEach((button) => {
-  button.addEventListener("click", (event) => {
-    // Remove active class from all color buttons
-    tintColorSwitches.forEach((btn) => btn.classList.remove("active"));
-    // Add active class to clicked button
-    event.target.classList.add("active");
-    // Update current tint color mode
-    currentTintColorMode = event.target.dataset.value;
-    // Generate tokens
-    generateTokens();
+// Harmony mode swatch listeners
+function initHarmonySwatches() {
+  const harmonySwatches = document.querySelectorAll(".harmony-swatch");
+  harmonySwatches.forEach((swatch) => {
+    swatch.addEventListener("click", (event) => {
+      // Remove active class from all swatches
+      harmonySwatches.forEach((s) => s.classList.remove("active"));
+      // Add active class to clicked swatch
+      event.currentTarget.classList.add("active");
+      
+      // Update current tint color mode based on data attributes
+      const mode = event.currentTarget.dataset.mode;
+      const variant = event.currentTarget.dataset.variant;
+      
+      // Map mode + variant to tintMode string
+      if (mode === "primary") {
+        currentTintColorMode = "primary";
+      } else if (mode === "complimentary") {
+        currentTintColorMode = "complimentary";
+      } else if (mode === "analogous") {
+        currentTintColorMode = variant === "plus" ? "analogous-plus" : "analogous-minus";
+      } else if (mode === "triadic") {
+        currentTintColorMode = variant === "plus" ? "triadic-plus" : "triadic-minus";
+      }
+      
+      // Generate tokens
+      generateTokens();
+    });
   });
-});
+}
+
+// Tint amount switch listeners
+function initTintAmountSwitches() {
+  const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
+  tintAmountSwitches.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      // Remove active class from all amount buttons
+      tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
+      // Add active class to clicked button
+      event.target.classList.add("active");
+      // Update current tint level
+      currentTintLevel = event.target.dataset.value;
+      // Update hidden saturation input with calculated value
+      satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
+      // Generate tokens
+      generateTokens();
+    });
+  });
+}
+
+initHarmonySwatches();
+initTintAmountSwitches();
 
 generateBtn.addEventListener("click", generateTokens);
 
@@ -2257,11 +2335,15 @@ resetBtn.addEventListener("click", () => {
   derivedSwatch.style.background = "#222";
   derivedLabel.textContent = "—";
   // Update tint amount switch UI
+  const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
   tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
-  document.getElementById("tintAmountSwitch-low").classList.add("active");
-  // Update tint color switch UI
-  tintColorSwitches.forEach((btn) => btn.classList.remove("active"));
-  document.getElementById("tintColorSwitch-primary").classList.add("active");
+  const lowSwitch = document.getElementById("tintAmountSwitch-low");
+  if (lowSwitch) lowSwitch.classList.add("active");
+  // Update harmony mode UI
+  const harmonySwatches = document.querySelectorAll(".harmony-swatch");
+  harmonySwatches.forEach((btn) => btn.classList.remove("active"));
+  const primarySwatch = document.querySelector('[data-mode="primary"]');
+  if (primarySwatch) primarySwatch.classList.add("active");
   renderScale();
   renderPrimaryScale();
   renderMatrix();
@@ -2269,6 +2351,15 @@ resetBtn.addEventListener("click", () => {
 
 // Initialize welcome page
 initWelcomePage();
+
+// Load configuration and apply to UI
+if (typeof initConfig === 'function') {
+  initConfig().then(() => {
+    // Re-initialize after config loads
+    initHarmonySwatches();
+    initTintAmountSwitches();
+  });
+}
 
 // Generate random tint amounts on app load
 generateRandomTintAmounts();
