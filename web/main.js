@@ -281,6 +281,7 @@ const complianceLevel = document.getElementById("complianceLevel");
 const output = document.getElementById("output");
 const generateBtn = document.getElementById("generate");
 const copyBtn = document.getElementById("copy");
+const downloadBtn = document.getElementById("download");
 const resetBtn = document.getElementById("reset");
 const tokenCount = document.getElementById("token-count");
 
@@ -2389,6 +2390,7 @@ function generateTokens() {
     if (!derived) {
       output.value = "Invalid primary colour.";
       copyBtn.disabled = true;
+      downloadBtn.disabled = true;
       tokenCount.textContent = "0";
       renderScale();
       renderMatrix();
@@ -2454,12 +2456,14 @@ function generateTokens() {
     tokenCount.textContent = total.toString();
     output.value = formatTokens(tokens, currentOutputFormat);
     copyBtn.disabled = total === 0;
+    downloadBtn.disabled = total === 0;
   } catch (err) {
     console.error("generateTokens error:", err);
     console.error("Stack trace:", err.stack);
     ErrorHandler.handleGenerationError(err);
     output.value = `Error generating tokens: ${err.message}\\n\\nPlease try a different color or check the browser console for details.`;
     copyBtn.disabled = true;
+    downloadBtn.disabled = true;
     tokenCount.textContent = "0";
   }
 }
@@ -2625,6 +2629,40 @@ copyBtn.addEventListener("click", async () => {
   }
 });
 
+downloadBtn.addEventListener("click", () => {
+  try {
+    const tokensData = output.value;
+    if (!tokensData) {
+      ErrorHandler.show("No tokens to download");
+      return;
+    }
+
+    // Create blob from JSON data
+    const blob = new Blob([tokensData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Create temporary download link
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "colour-tokens.json";
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Update button text briefly
+    const originalHTML = downloadBtn.innerHTML;
+    downloadBtn.innerHTML = '<ion-icon name="checkmark-outline" aria-hidden="true"></ion-icon>Downloaded';
+    setTimeout(() => {
+      downloadBtn.innerHTML = originalHTML;
+    }, 1500);
+  } catch (error) {
+    ErrorHandler.show("Download failed: " + error.message);
+  }
+});
+
 resetBtn.addEventListener("click", () => {
   primaryInput.value = "#3366FF";
   if (primaryColorPicker) {
@@ -2638,6 +2676,7 @@ resetBtn.addEventListener("click", () => {
   if (complianceLevel) complianceLevel.value = "AA";
   output.value = "";
   copyBtn.disabled = true;
+  downloadBtn.disabled = true;
   tokenCount.textContent = "0";
   derivedHexInput.value = "";
   derivedSwatch.style.background = "#222";
