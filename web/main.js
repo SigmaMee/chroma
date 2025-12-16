@@ -81,36 +81,72 @@ const Validator = {
 const ErrorHandler = {
   showError(message, duration = 5000) {
     console.error(message);
+    this.showNotification(message, 'error', duration);
+  },
+  
+  showSuccess(message, duration = 3000) {
+    this.showNotification(message, 'success', duration);
+  },
+  
+  showInfo(message, duration = 4000) {
+    this.showNotification(message, 'info', duration);
+  },
+  
+  showNotification(message, type = 'info', duration = 4000) {
+    const colors = {
+      error: { bg: '#dc2626', icon: 'alert-circle-outline' },
+      success: { bg: '#16a34a', icon: 'checkmark-circle-outline' },
+      info: { bg: '#2563eb', icon: 'information-circle-outline' }
+    };
     
-    // Create error notification element
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-notification';
-    errorDiv.textContent = message;
-    errorDiv.style.cssText = `
+    const config = colors[type] || colors.info;
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+      <ion-icon name="${config.icon}"></ion-icon>
+      <span>${message}</span>
+    `;
+    notification.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #dc2626;
+      background: ${config.bg};
       color: white;
       padding: 16px 24px;
       border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       z-index: 10000;
       max-width: 400px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       animation: slideIn 0.3s ease-out;
+      font-size: 0.875rem;
     `;
     
-    document.body.appendChild(errorDiv);
+    const icon = notification.querySelector('ion-icon');
+    if (icon) {
+      icon.style.fontSize = '1.25rem';
+      icon.style.flexShrink = '0';
+    }
+    
+    document.body.appendChild(notification);
     
     setTimeout(() => {
-      errorDiv.style.animation = 'slideOut 0.3s ease-in';
-      setTimeout(() => errorDiv.remove(), 300);
+      notification.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => notification.remove(), 300);
     }, duration);
   },
 
   handleGenerationError(error, context = 'Token generation') {
     console.error(`${context} error:`, error);
     this.showError(`${context} failed. Please try a different color or refresh the page.`);
+  },
+  
+  show: function(message) {
+    this.showError(message);
   }
 };
 
@@ -140,6 +176,57 @@ const primarySwatch = document.getElementById("primarySwatch");
 const primaryColorPicker = document.getElementById("primaryColorPicker");
 const satInput = document.getElementById("greyscaleSaturationValue");
 const formatSelect = document.getElementById("format");
+
+// Recently used colors
+const recentColorsContainer = document.getElementById("recentColors");
+const recentColorsGrid = document.getElementById("recentColorsGrid");
+let recentColors = [];
+const MAX_RECENT_COLORS = 8;
+
+function addToRecentColors(hex) {
+  if (!hex || !Validator.isValidHex(hex)) return;
+  
+  // Remove if already exists
+  recentColors = recentColors.filter(c => c.toLowerCase() !== hex.toLowerCase());
+  
+  // Add to beginning
+  recentColors.unshift(hex.toUpperCase());
+  
+  // Limit to max
+  if (recentColors.length > MAX_RECENT_COLORS) {
+    recentColors = recentColors.slice(0, MAX_RECENT_COLORS);
+  }
+  
+  // Update UI
+  renderRecentColors();
+}
+
+function renderRecentColors() {
+  if (recentColors.length === 0) {
+    if (recentColorsContainer) recentColorsContainer.style.display = 'none';
+    return;
+  }
+  
+  if (recentColorsContainer) recentColorsContainer.style.display = 'block';
+  if (!recentColorsGrid) return;
+  
+  recentColorsGrid.innerHTML = '';
+  
+  recentColors.forEach(color => {
+    const swatch = document.createElement('button');
+    swatch.className = 'recent-color-swatch';
+    swatch.style.background = color;
+    swatch.title = color;
+    swatch.setAttribute('aria-label', `Use color ${color}`);
+    swatch.addEventListener('click', () => {
+      if (welcomePrimaryHex) welcomePrimaryHex.value = color;
+      if (welcomePrimaryColor) welcomePrimaryColor.value = color;
+      if (welcomeSwatch) welcomeSwatch.style.background = color;
+      updateWelcomePreview();
+    });
+    recentColorsGrid.appendChild(swatch);
+  });
+}
 
 // Welcome page elements
 const welcomePage = document.getElementById("welcomePage");
@@ -269,7 +356,7 @@ const derivedSwatch = document.getElementById("derivedSwatch");
 const derivedLabel = document.getElementById("derivedLabel");
 const scaleGrid = document.getElementById("scale-grid");
 const scaleCount = document.getElementById("scale-count");
-const primaryScaleGrid = document.getElementById("primary-scale-grid");
+const primaryScaleGrid = document.getElementById("primary-grid");
 const primaryScaleCount = document.getElementById("primary-scale-count");
 const matrixGrid = document.getElementById("matrix-grid");
 const matrixPassCount = document.getElementById("matrix-pass-count");
@@ -578,6 +665,7 @@ function generatePrimaryScale(data) {
     "100",
     "200",
     "300",
+    "400",
     "500",
     "600",
     "700",
@@ -586,7 +674,7 @@ function generatePrimaryScale(data) {
     "950",
   ];
 
-  return ordered.slice(0, 10).map((entry, index) => ({
+  return ordered.slice(0, 11).map((entry, index) => ({
     name: `color.primary.${scaleLabels[index]}`,
     hex: entry.hex,
     isSeed: entry.hex === data.hex,
@@ -2380,96 +2468,125 @@ function renderSemanticMapping(tokens, scale, theme = 'light') {
 }
 
 function generateTokens() {
-  try {
-    // Generate new random tint amounts each time tokens are generated
-    generateRandomTintAmounts();
-    // Update the saturation input to reflect the new random value
-    satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
-    
-    const derived = updateDerivedPreview();
-    if (!derived) {
-      output.value = "Invalid primary colour.";
-      copyBtn.disabled = true;
-      downloadBtn.disabled = true;
-      tokenCount.textContent = "0";
-      renderScale();
-      renderMatrix();
-      return;
-    }
-
-    const scale = generateGreyscaleScale(derived);
-    // Build primaryData from the user's primary input so the primary scale uses the actual primary seed
-    const primaryHex = normalizeHex(primaryInput.value);
-    let primaryData = null;
-    if (primaryHex) {
-      const prgb = hexToRgb(primaryHex);
-      if (prgb) {
-        primaryData = { hex: primaryHex, hsl: rgbToHsl(prgb.r, prgb.g, prgb.b) };
+  if (!generateBtn) return;
+  
+  // Show loading state
+  const btnText = generateBtn.querySelector('.btn-text');
+  const btnSpinner = generateBtn.querySelector('.btn-spinner');
+  if (btnText) btnText.style.display = 'none';
+  if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+  generateBtn.disabled = true;
+  
+  // Use setTimeout to allow UI to update
+  setTimeout(() => {
+    try {
+      // Generate new random tint amounts each time tokens are generated
+      generateRandomTintAmounts();
+      // Update the saturation input to reflect the new random value
+      if (satInput) {
+        satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
       }
-    }
-    const primaryScale = generatePrimaryScale(primaryData);
-    // Render greyscale and primary scales in separate preview sections
-    renderScale(scale);
-    renderPrimaryScale(primaryScale);
-    // Matrix should only use the greyscale combinations
-    renderMatrix(scale);
-    // Render primary color matrix with neutral + white as foregrounds
-    renderPrimaryColorMatrix(primaryScale, scale);
+      
+      const derived = updateDerivedPreview();
+      if (!derived) {
+        if (output) output.value = "Invalid primary colour.";
+        if (copyBtn) copyBtn.disabled = true;
+        if (downloadBtn) downloadBtn.disabled = true;
+        if (tokenCount) tokenCount.textContent = "0";
+        renderScale();
+        renderMatrix();
+        // Hide loading state before returning
+        if (btnText) btnText.style.display = 'inline';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = false;
+        return;
+      }
 
-    // Generate semantic tokens from neutral scale FIRST
-    const neutralScale = scale.filter((item) => item.name.includes("greyscale.scale"));
-    let semantic = null;
-    if (neutralScale.length > 0) {
-      const complianceMode = complianceLevel ? complianceLevel.value : "AA";
-      semantic = generateSemanticFromNeutral(neutralScale, complianceMode);
-    }
-
-    // Pass primaryData, derived, and semantic to createTokens so it can use semantic.text.primary
-    const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived, semantic);
-
-    // Render semantic tokens preview
-    if (semantic) {
-      const complianceMode = complianceLevel ? complianceLevel.value : "AA";
-      // Pass combined scale (neutral + primary) so preview can extract primary values
-      renderSemanticPreview(semantic, complianceMode, tokens, scale.concat(primaryScale), currentTheme);
-      // Render semantic contrast matrix
-      renderSemanticMatrix(tokens, complianceMode, currentTheme);
-      // Render semantic mapping UI
-      renderSemanticMapping(tokens, scale.concat(primaryScale), currentTheme);
-    }
-
-    // Count leaves in the nested W3C tokens object
-    function countLeaves(obj) {
-      let count = 0;
-      Object.keys(obj || {}).forEach((key) => {
-        const val = obj[key];
-        if (val && typeof val === "object" && (Object.prototype.hasOwnProperty.call(val, "$value") || Object.prototype.hasOwnProperty.call(val, "value"))) {
-          count += 1;
-        } else if (val && typeof val === "object") {
-          count += countLeaves(val);
+      const scale = generateGreyscaleScale(derived);
+      // Build primaryData from the user's primary input so the primary scale uses the actual primary seed
+      const primaryHex = normalizeHex(primaryInput.value);
+      let primaryData = null;
+      if (primaryHex) {
+        const prgb = hexToRgb(primaryHex);
+        if (prgb) {
+          primaryData = { hex: primaryHex, hsl: rgbToHsl(prgb.r, prgb.g, prgb.b) };
         }
-      });
-      return count;
-    }
+      }
+      const primaryScale = generatePrimaryScale(primaryData);
+      
+      // Render greyscale and primary scales in separate preview sections
+      renderScale(scale);
+      renderPrimaryScale(primaryScale);
+      // Matrix should only use the greyscale combinations
+      renderMatrix(scale);
+      // Render primary color matrix with neutral + white as foregrounds
+      renderPrimaryColorMatrix(primaryScale, scale);
 
-    const total = countLeaves(tokens);
-    tokenCount.textContent = total.toString();
-    output.value = formatTokens(tokens, currentOutputFormat);
-    copyBtn.disabled = total === 0;
-    downloadBtn.disabled = total === 0;
-  } catch (err) {
-    console.error("generateTokens error:", err);
-    console.error("Stack trace:", err.stack);
-    ErrorHandler.handleGenerationError(err);
-    output.value = `Error generating tokens: ${err.message}\\n\\nPlease try a different color or check the browser console for details.`;
-    copyBtn.disabled = true;
-    downloadBtn.disabled = true;
-    tokenCount.textContent = "0";
-  }
+      // Generate semantic tokens from neutral scale FIRST
+      const neutralScale = scale.filter((item) => item.name.includes("greyscale.scale"));
+      let semantic = null;
+      if (neutralScale.length > 0) {
+        const complianceMode = complianceLevel ? complianceLevel.value : "AA";
+        semantic = generateSemanticFromNeutral(neutralScale, complianceMode);
+      }
+
+      // Pass primaryData, derived, and semantic to createTokens so it can use semantic.text.primary
+      const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived, semantic);
+
+      // Render semantic tokens preview
+      if (semantic) {
+        const complianceMode = complianceLevel ? complianceLevel.value : "AA";
+        // Pass combined scale (neutral + primary) so preview can extract primary values
+        renderSemanticPreview(semantic, complianceMode, tokens, scale.concat(primaryScale), currentTheme);
+        // Render semantic contrast matrix
+        renderSemanticMatrix(tokens, complianceMode, currentTheme);
+        // Render semantic mapping UI
+        renderSemanticMapping(tokens, scale.concat(primaryScale), currentTheme);
+      }
+
+      // Count leaves in the nested W3C tokens object
+      function countLeaves(obj) {
+        let count = 0;
+        Object.keys(obj || {}).forEach((key) => {
+          const val = obj[key];
+          if (val && typeof val === "object" && (Object.prototype.hasOwnProperty.call(val, "$value") || Object.prototype.hasOwnProperty.call(val, "value"))) {
+            count += 1;
+          } else if (val && typeof val === "object") {
+            count += countLeaves(val);
+          }
+        });
+        return count;
+      }
+
+      const total = countLeaves(tokens);
+      if (tokenCount) tokenCount.textContent = total.toString();
+      if (output) output.value = formatTokens(tokens, currentOutputFormat);
+      if (copyBtn) copyBtn.disabled = total === 0;
+      if (downloadBtn) downloadBtn.disabled = total === 0;
+      
+      // Add to recent colors
+      if (primaryHex && total > 0) {
+        addToRecentColors(primaryHex);
+      }
+    } catch (err) {
+      console.error("generateTokens error:", err);
+      console.error("Stack trace:", err.stack);
+      ErrorHandler.handleGenerationError(err);
+      if (output) output.value = `Error generating tokens: ${err.message}\n\nPlease try a different color or check the browser console for details.`;
+      if (copyBtn) copyBtn.disabled = true;
+      if (downloadBtn) downloadBtn.disabled = true;
+      if (tokenCount) tokenCount.textContent = "0";
+    } finally {
+      // Hide loading state
+      if (btnText) btnText.style.display = 'inline';
+      if (btnSpinner) btnSpinner.style.display = 'none';
+      if (generateBtn) generateBtn.disabled = false;
+    }
+  }, 50);
 }
 
 // Color picker functionality for primary color
-if (primaryColorPicker) {
+if (primaryColorPicker && primarySwatch) {
   // Open color picker when swatch is clicked
   primarySwatch.addEventListener("click", () => {
     primaryColorPicker.click();
@@ -2478,42 +2595,44 @@ if (primaryColorPicker) {
   // Update text input and swatch when color picker changes
   primaryColorPicker.addEventListener("input", (e) => {
     const color = e.target.value.toUpperCase();
-    primaryInput.value = color;
+    if (primaryInput) primaryInput.value = color;
     generateTokens();
   });
 }
 
-primaryInput.addEventListener("input", Performance.debounce(() => {
-  const normalized = normalizeHex(primaryInput.value);
-  if (!normalized) {
-    primaryInput.classList.add('error');
-    setTimeout(() => primaryInput.classList.remove('error'), 2000);
-    return;
-  }
-  
-  if (primaryColorPicker) {
-    primaryColorPicker.value = normalized;
-  }
-  primaryInput.value = normalized;
-  
-  // Clear contrast cache when color changes
-  Performance.clearCache();
-  
-  try {
-    generateTokens();
-  } catch (error) {
-    ErrorHandler.handleGenerationError(error);
-  }
-}, 300));
-
-initTintAmountSwitches();
-initHarmonySwatches();
+if (primaryInput) {
+  primaryInput.addEventListener("input", Performance.debounce(() => {
+    const normalized = normalizeHex(primaryInput.value);
+    if (!normalized) {
+      primaryInput.classList.add('error');
+      setTimeout(() => primaryInput.classList.remove('error'), 2000);
+      return;
+    }
+    
+    if (primaryColorPicker) {
+      primaryColorPicker.value = normalized;
+    }
+    primaryInput.value = normalized;
+    
+    // Clear contrast cache when color changes
+    Performance.clearCache();
+    
+    try {
+      generateTokens();
+    } catch (error) {
+      ErrorHandler.handleGenerationError(error);
+    }
+  }, 300));
+}
 
 // Harmony mode swatch listeners
 function initHarmonySwatches() {
   const harmonySwatches = document.querySelectorAll(".harmony-swatch");
   harmonySwatches.forEach((swatch) => {
     swatch.addEventListener("click", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      console.log('Harmony click detected!');
       // Remove active class from all swatches
       harmonySwatches.forEach((s) => s.classList.remove("active"));
       // Add active class to clicked swatch
@@ -2545,6 +2664,9 @@ function initTintAmountSwitches() {
   const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
   tintAmountSwitches.forEach((button) => {
     button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      console.log('Tint switch click detected!');
       // Remove active class from all amount buttons
       tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
       // Add active class to clicked button
@@ -2552,17 +2674,20 @@ function initTintAmountSwitches() {
       // Update current tint level
       currentTintLevel = event.target.dataset.value;
       // Update hidden saturation input with calculated value
-      satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
+      if (satInput) {
+        satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
+      }
       // Generate tokens
       generateTokens();
     });
   });
 }
 
-initHarmonySwatches();
-initTintAmountSwitches();
+// Event listeners will be initialized after config loads
 
-generateBtn.addEventListener("click", generateTokens);
+if (generateBtn) {
+  generateBtn.addEventListener("click", generateTokens);
+}
 
 // Theme toggle event listeners
 const themeButtons = document.querySelectorAll(".theme-btn");
@@ -2618,11 +2743,13 @@ copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(output.value);
     copyBtn.textContent = "Copied!";
+    ErrorHandler.showSuccess("Tokens copied to clipboard");
     setTimeout(() => {
       copyBtn.textContent = "Copy output";
     }, 1500);
   } catch (error) {
     copyBtn.textContent = "Copy failed";
+    ErrorHandler.showError("Failed to copy to clipboard");
     setTimeout(() => {
       copyBtn.textContent = "Copy output";
     }, 1500);
@@ -2655,6 +2782,7 @@ downloadBtn.addEventListener("click", () => {
     // Update button text briefly
     const originalHTML = downloadBtn.innerHTML;
     downloadBtn.innerHTML = '<ion-icon name="checkmark-outline" aria-hidden="true"></ion-icon>Downloaded';
+    ErrorHandler.showSuccess("Tokens downloaded successfully");
     setTimeout(() => {
       downloadBtn.innerHTML = originalHTML;
     }, 1500);
@@ -2702,15 +2830,22 @@ initWelcomePage();
 // Load configuration and apply to UI
 if (typeof initConfig === 'function') {
   initConfig().then(() => {
-    // Re-initialize after config loads
+    // Config has loaded and rebuilt the buttons, now attach event listeners
+    console.log('Config loaded, re-initializing event listeners');
     initHarmonySwatches();
     initTintAmountSwitches();
   });
+} else {
+  // If no config-loader, just initialize normally
+  initHarmonySwatches();
+  initTintAmountSwitches();
 }
 
 // Generate random tint amounts on app load
 generateRandomTintAmounts();
-satInput.value = Math.round(tintAmounts.low * 100) / 100;
+if (satInput) {
+  satInput.value = Math.round(tintAmounts.low * 100) / 100;
+}
 
 // Ensure the primary input and color picker are synchronized on load
 const _initialPrimary = normalizeHex(primaryInput && primaryInput.value ? primaryInput.value : "");
@@ -2718,6 +2853,34 @@ if (_initialPrimary) {
   if (primaryInput) primaryInput.value = _initialPrimary;
   if (primaryColorPicker) primaryColorPicker.value = _initialPrimary;
 }
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const modKey = isMac ? e.metaKey : e.ctrlKey;
+  
+  // Don't trigger if user is typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    return;
+  }
+  
+  // Cmd/Ctrl + G: Generate tokens
+  if (modKey && e.key.toLowerCase() === 'g') {
+    e.preventDefault();
+    if (generateBtn && !generateBtn.disabled) {
+      generateTokens();
+    }
+  }
+  
+  // Cmd/Ctrl + K: Copy output
+  if (modKey && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    if (copyBtn && !copyBtn.disabled) {
+      copyBtn.click();
+    }
+  }
+});
+
 updateDerivedPreview();
 renderScale();
 renderMatrix();

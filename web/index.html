@@ -61,6 +61,11 @@
               aria-label="Color swatch, click to open color picker"
             ></div>
           </div>
+          
+          <div id="recentColors" class="recent-colors" style="display: none;">
+            <label style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.5rem; display: block;">Recently used</label>
+            <div id="recentColorsGrid" class="recent-colors-grid"></div>
+          </div>
         </div>
 
         <button 
@@ -114,7 +119,13 @@
 
           <div class="button-container">
             <button id="reset">Reset</button>
-            <button class="primary" id="generate">Generate tokens</button>
+            <button class="primary" id="generate">
+              <span class="btn-text">Generate tokens</span>
+              <span class="btn-spinner" style="display: none;">
+                <ion-icon name="hourglass-outline" class="spin-icon"></ion-icon>
+                Generating...
+              </span>
+            </button>
             
           </div>
         </div>
@@ -125,12 +136,12 @@
           <div class="column column-1">
             <section class="card">
               <div>
-                <label>Options</label>
+                <div style="font-weight: 600; margin-bottom: 12px;">Options</div>
                 <div style="margin-bottom: 12px;">
-                  <label style="font-size: 0.875rem; font-weight: normal;">
+                  <div style="font-size: 0.875rem; font-weight: normal; margin-bottom: 8px;">
                     Harmony mode
                     <span class="helper">(Choose tint color relationship)</span>
-                  </label>
+                  </div>
                   <div class="harmony-cards">
                     <!-- Monochromatic -->
                     <div class="harmony-card">
@@ -192,10 +203,10 @@
                   </div>
                 </div>
                 <div>
-                  <label for="tintAmountSwitch-col" style="font-size: 0.875rem; font-weight: normal;">
+                  <div style="font-size: 0.875rem; font-weight: normal; margin-bottom: 8px;">
                     Tint amount
                     <span class="helper">(Low, Mid, or High)</span>
-                  </label>
+                  </div>
                   <div class="switch-row">
                     <button id="tintAmountSwitch-low" class="tint-switch active" data-value="low">Low</button>
                     <button id="tintAmountSwitch-mid" class="tint-switch" data-value="mid">Mid</button>
@@ -211,14 +222,22 @@
               
              <span>Neutral (10 steps)</span>
               <div class="scale-grid" id="scale-grid">
-                <p class="helper">Generate tokens to preview the scale.</p>
+                <div class="empty-state">
+                  <ion-icon name="color-palette-outline"></ion-icon>
+                  <h3>No tokens yet</h3>
+                  <p>Generate tokens to preview the neutral color scale</p>
+                </div>
               </div>
               
 
               
               <span>Primary (10 steps)</span>
-              <div class="scale-grid" id="primary-scale-grid">
-                <p class="helper">Generate tokens to preview the primary color scale.</p>
+              <div class="scale-grid" id="primary-grid">
+                <div class="empty-state">
+                  <ion-icon name="brush-outline"></ion-icon>
+                  <h3>No tokens yet</h3>
+                  <p>Generate tokens to preview the primary color scale</p>
+                </div>
               </div>
               
             </section>
@@ -227,7 +246,11 @@
               <label>Semantic Mapping</label>
               <p class="helper" style="margin-top: 0;">Override the default semantic token mappings from the palettes above.</p>
               <div id="semantic-mapping-container">
-                <p class="helper">Generate tokens to configure semantic mappings.</p>
+                <div class="empty-state">
+                  <ion-icon name="options-outline"></ion-icon>
+                  <h3>No semantic mappings</h3>
+                  <p>Generate tokens first, then customize semantic color assignments</p>
+                </div>
               </div>
             </section>
 
