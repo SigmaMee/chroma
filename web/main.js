@@ -181,9 +181,16 @@ function initWelcomePage() {
     }
   }, 100));
 
-  // Make swatch clickable to open color picker
+  // Make swatch clickable to open color picker (with keyboard support)
   welcomeSwatch.addEventListener("click", () => {
     welcomePrimaryColor.click();
+  });
+  
+  welcomeSwatch.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      welcomePrimaryColor.click();
+    }
   });
 
   welcomeGenerateBtn.addEventListener("click", () => {
@@ -285,12 +292,16 @@ tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const tabName = button.dataset.tab;
     
-    // Remove active class from all buttons and contents
-    tabButtons.forEach((btn) => btn.classList.remove("active"));
+    // Remove active class and ARIA states from all buttons and contents
+    tabButtons.forEach((btn) => {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-selected", "false");
+    });
     tabContents.forEach((content) => content.classList.remove("active"));
     
-    // Add active class to clicked button and corresponding content
+    // Add active class and ARIA states to clicked button and corresponding content
     button.classList.add("active");
+    button.setAttribute("aria-selected", "true");
     document.getElementById(`${tabName}-tab`).classList.add("active");
   });
 });
@@ -2553,10 +2564,14 @@ generateBtn.addEventListener("click", generateTokens);
 const themeButtons = document.querySelectorAll(".theme-btn");
 themeButtons.forEach((button) => {
   button.addEventListener("click", (event) => {
-    // Remove active class from all theme buttons
-    themeButtons.forEach((btn) => btn.classList.remove("active"));
-    // Add active class to clicked button
+    // Remove active class and update ARIA for all theme buttons
+    themeButtons.forEach((btn) => {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-pressed", "false");
+    });
+    // Add active class and ARIA to clicked button
     event.target.classList.add("active");
+    event.target.setAttribute("aria-pressed", "true");
     // Update current theme
     currentTheme = event.target.dataset.theme;
     // Re-generate tokens with new theme

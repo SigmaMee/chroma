@@ -18,6 +18,9 @@
     </script>
   </head>
   <body>
+    <!-- Skip to main content for screen readers -->
+    <a href="#mainContent" class="skip-to-main">Skip to main content</a>
+    
     <!-- Welcome Page -->
     <div class="welcome-page" id="welcomePage">
       <div class="welcome-container">
@@ -36,6 +39,7 @@
                 type="color"
                 value="#3366FF"
                 class="welcome-color-picker"
+                aria-label="Pick a primary color"
               />
             </div>
             <input
@@ -45,12 +49,25 @@
               maxlength="7"
               placeholder="#3366FF"
               class="welcome-hex-input"
+              aria-label="Enter hex color code"
             />
-            <div class="welcome-swatch" id="welcomeSwatch" style="background-color: #3366FF; cursor: pointer;" title="Click to pick a color"></div>
+            <div 
+              class="welcome-swatch" 
+              id="welcomeSwatch" 
+              style="background-color: #3366FF; cursor: pointer;" 
+              title="Click to pick a color"
+              role="button"
+              tabindex="0"
+              aria-label="Color swatch, click to open color picker"
+            ></div>
           </div>
         </div>
 
-        <button id="welcomeGenerateBtn" class="welcome-cta">Begin the transmutation</button>
+        <button 
+          id="welcomeGenerateBtn" 
+          class="welcome-cta"
+          aria-label="Generate design tokens from selected color"
+        >Begin the transmutation</button>
       </div>
       <footer>
         <p>
@@ -61,6 +78,7 @@
 
     <!-- Main App -->
     <div class="app" id="mainApp" style="display: none;">
+      <a id="mainContent"></a>
       <header>
         <div>
           <h1>Chroma </h1>
@@ -243,23 +261,23 @@
           <!-- Column 2: Tabs (Preview / JSON Output) -->
           <div class="column column-2">
             <div class="tabs-container">
-              <div class="tabs-header">
-                <button class="tab-button active" data-tab="preview" aria-label="Preview"><ion-icon name="eye-outline"></ion-icon></button>
-                <button class="tab-button" data-tab="wcag" aria-label="WCAG Validation"><ion-icon name="accessibility-outline"></ion-icon></button>
-                <button class="tab-button" data-tab="output" aria-label="JSON Output"><ion-icon name="code-slash-outline"></ion-icon></button>
+              <div class="tabs-header" role="tablist" aria-label="Token views">
+                <button class="tab-button active" data-tab="preview" role="tab" aria-selected="true" aria-controls="preview-tab" aria-label="Preview tokens"><ion-icon name="eye-outline" aria-hidden="true"></ion-icon></button>
+                <button class="tab-button" data-tab="wcag" role="tab" aria-selected="false" aria-controls="wcag-tab" aria-label="WCAG Validation"><ion-icon name="accessibility-outline" aria-hidden="true"></ion-icon></button>
+                <button class="tab-button" data-tab="output" role="tab" aria-selected="false" aria-controls="output-tab" aria-label="JSON Output"><ion-icon name="code-slash-outline" aria-hidden="true"></ion-icon></button>
               </div>
 
               <!-- Preview Tab -->
-              <div class="tab-content active" id="preview-tab">
+              <div class="tab-content active" id="preview-tab" role="tabpanel" aria-labelledby="preview">
                 <section class="card semantic-preview">
                   <div class="status">
                     <span>Semantic tokens preview</span>
-                    <div class="theme-toggle">
-                      <button class="theme-btn active" data-theme="light">Light</button>
-                      <button class="theme-btn" data-theme="dark">Dark</button>
+                    <div class="theme-toggle" role="group" aria-label="Theme selection">
+                      <button class="theme-btn active" data-theme="light" aria-pressed="true">Light</button>
+                      <button class="theme-btn" data-theme="dark" aria-pressed="false">Dark</button>
                     </div>
                   </div>
-                  <div id="semantic-preview-container">
+                  <div id="semantic-preview-container" aria-live="polite">
                     <p class="helper">Generate tokens to preview semantic surfaces and text.</p>
                   </div>
                 </section>
