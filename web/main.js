@@ -2,6 +2,44 @@
 // ERROR HANDLING & VALIDATION
 // ============================================================================
 
+// Performance utilities
+const Performance = {
+  // Debounce function to limit rapid function calls
+  debounce(func, wait = 300) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  },
+
+  // Cache for contrast ratio calculations
+  contrastCache: new Map(),
+  
+  getContrastCached(bgHex, fgHex) {
+    const key = `${bgHex}:${fgHex}`;
+    if (this.contrastCache.has(key)) {
+      return this.contrastCache.get(key);
+    }
+    const ratio = getContrastRatio(bgHex, fgHex);
+    this.contrastCache.set(key, ratio);
+    // Limit cache size to prevent memory issues
+    if (this.contrastCache.size > 1000) {
+      const firstKey = this.contrastCache.keys().next().value;
+      this.contrastCache.delete(firstKey);
+    }
+    return ratio;
+  },
+
+  clearCache() {
+    this.contrastCache.clear();
+  }
+};
+
 // Validation utilities
 const Validator = {
   isValidHex(hex) {
@@ -103,13 +141,13 @@ function initWelcomePage() {
     return;
   }
   
-  // Sync color picker and hex input
-  welcomePrimaryColor.addEventListener("input", (e) => {
+  // Sync color picker and hex input (debounced)
+  welcomePrimaryColor.addEventListener("input", Performance.debounce((e) => {
     welcomePrimaryHex.value = e.target.value;
     welcomeSwatch.style.backgroundColor = e.target.value;
-  });
+  }, 100));
 
-  welcomePrimaryHex.addEventListener("input", (e) => {
+  welcomePrimaryHex.addEventListener("input", Performance.debounce((e) => {
     let value = e.target.value.toUpperCase();
     // Auto-add # if missing
     if (value && !value.startsWith("#")) {
@@ -120,7 +158,7 @@ function initWelcomePage() {
       welcomeSwatch.style.backgroundColor = value;
       e.target.value = value;
     }
-  });
+  }, 100));
 
   // Make swatch clickable to open color picker
   welcomeSwatch.addEventListener("click", () => {
@@ -723,7 +761,7 @@ function renderMatrix(scale) {
     matrixGrid.appendChild(rowHeader);
 
     testColors.forEach((fg) => {
-      const ratio = getContrastRatio(bg.hex, fg.hex);
+      const ratio = Performance.getContrastCached(bg.hex, fg.hex);
       let cellClass = "fail";
       if (typeof ratio === "number") {
         if (ratio >= normalThreshold) {
@@ -796,7 +834,7 @@ function renderPrimaryColorMatrix(primaryScale, neutralScale) {
     primaryMatrixGrid.appendChild(rowHeader);
 
     foregrounds.forEach((fg) => {
-      const ratio = getContrastRatio(bg.hex, fg.hex);
+      const ratio = Performance.getContrastCached(bg.hex, fg.hex);
       let cellClass = "fail";
       if (typeof ratio === "number") {
         if (ratio >= normalThreshold) {
@@ -974,7 +1012,7 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
       grid.appendChild(rowHeader);
 
       surfaces.forEach((bg) => {
-        const ratio = getContrastRatio(bg.hex, fg.hex);
+        const ratio = Performance.getContrastCached(bg.hex, fg.hex);
         let cellClass = "fail";
         
         // Determine threshold based on whether this is text or outline
@@ -2409,7 +2447,7 @@ if (primaryColorPicker) {
   });
 }
 
-primaryInput.addEventListener("input", () => {
+primaryInput.addEventListener("input", Performance.debounce(() => {
   const normalized = normalizeHex(primaryInput.value);
   if (!normalized) {
     primaryInput.classList.add('error');
@@ -2422,12 +2460,15 @@ primaryInput.addEventListener("input", () => {
   }
   primaryInput.value = normalized;
   
+  // Clear contrast cache when color changes
+  Performance.clearCache();
+  
   try {
     generateTokens();
   } catch (error) {
     ErrorHandler.handleGenerationError(error);
   }
-});
+}, 300));
 
 initTintAmountSwitches();
 initHarmonySwatches();
