@@ -2480,13 +2480,6 @@ function generateTokens() {
   // Use setTimeout to allow UI to update
   setTimeout(() => {
     try {
-      // Generate new random tint amounts each time tokens are generated
-      generateRandomTintAmounts();
-      // Update the saturation input to reflect the new random value
-      if (satInput) {
-        satInput.value = Math.round(tintAmounts[currentTintLevel] * 100) / 100;
-      }
-      
       const derived = updateDerivedPreview();
       if (!derived) {
         if (output) output.value = "Invalid primary colour.";
