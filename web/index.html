@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Generate accessible design tokens from a single color with WCAG compliance checking" />
     <meta name="theme-color" content="#5a7dff" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎨</text></svg>" />
     <link rel="stylesheet" href="./styles.css" />
     <!-- Fallback message for very old browsers -->
     <script>
@@ -54,7 +55,6 @@
             <div 
               class="welcome-swatch" 
               id="welcomeSwatch" 
-              style="background-color: #3366FF; cursor: pointer;" 
               title="Click to pick a color"
               role="button"
               tabindex="0"
@@ -62,8 +62,8 @@
             ></div>
           </div>
           
-          <div id="recentColors" class="recent-colors" style="display: none;">
-            <label style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 0.5rem; display: block;">Recently used</label>
+          <div id="recentColors" class="recent-colors hidden">
+            <div class="recently-used-label">Recently used</div>
             <div id="recentColorsGrid" class="recent-colors-grid"></div>
           </div>
         </div>
@@ -82,7 +82,7 @@
     </div>
 
     <!-- Main App -->
-    <div class="app" id="mainApp" style="display: none;">
+    <div class="app hidden" id="mainApp">
       <a id="mainContent"></a>
       <header>
         <div>
@@ -114,14 +114,13 @@
             value="8"
           />
           <input type="hidden" id="derivedHex" value="" />
-          <span id="derivedSwatch" style="display:none;"></span>
-          <span id="derivedLabel" style="display:none;"></span>
+          <span id="derivedSwatch" class="hidden"></span>
 
           <div class="button-container">
             <button id="reset">Reset</button>
             <button class="primary" id="generate">
               <span class="btn-text">Generate tokens</span>
-              <span class="btn-spinner" style="display: none;">
+              <span class="btn-spinner hidden">
                 <ion-icon name="hourglass-outline" class="spin-icon"></ion-icon>
                 Generating...
               </span>
@@ -136,9 +135,9 @@
           <div class="column column-1">
             <section class="card">
               <div>
-                <div style="font-weight: 600; margin-bottom: 12px;">Options</div>
-                <div style="margin-bottom: 12px;">
-                  <div style="font-size: 0.875rem; font-weight: normal; margin-bottom: 8px;">
+                <div class="options-heading">Options</div>
+                <div class="option-section">
+                  <div class="option-label">
                     Harmony mode
                     <span class="helper">(Choose tint color relationship)</span>
                   </div>
@@ -203,7 +202,7 @@
                   </div>
                 </div>
                 <div>
-                  <div style="font-size: 0.875rem; font-weight: normal; margin-bottom: 8px;">
+                  <div class="option-label">
                     Tint amount
                     <span class="helper">(Low, Mid, or High)</span>
                   </div>
@@ -218,9 +217,9 @@
 
             <section class="card scale-card">
              
-              <label>Palettes</label>
+              <h3 class="section-heading">Palettes</h3>
               
-             <span>Neutral (10 steps)</span>
+             <div class="subsection-label">Neutral (10 steps)</div>
               <div class="scale-grid" id="scale-grid">
                 <div class="empty-state">
                   <ion-icon name="color-palette-outline"></ion-icon>
@@ -231,7 +230,7 @@
               
 
               
-              <span>Primary (10 steps)</span>
+              <div class="subsection-label">Primary (10 steps)</div>
               <div class="scale-grid" id="primary-grid">
                 <div class="empty-state">
                   <ion-icon name="brush-outline"></ion-icon>
@@ -243,8 +242,8 @@
             </section>
 
             <section class="card">
-              <label>Semantic Mapping</label>
-              <p class="helper" style="margin-top: 0;">Override the default semantic token mappings from the palettes above.</p>
+              <h3 class="section-heading">Semantic Mapping</h3>
+              <p class="helper helper-no-margin">Override the default semantic token mappings from the palettes above.</p>
               <div id="semantic-mapping-container">
                 <div class="empty-state">
                   <ion-icon name="options-outline"></ion-icon>
@@ -254,7 +253,7 @@
               </div>
             </section>
 
-            <section class="card matrix-card" style="display: none;">
+            <section class="card matrix-card hidden">
               <div class="status">
                 <span>WCAG contrast matrix (background × foreground)</span>
                 <span class="pill" id="matrix-pass-count">0</span>
@@ -267,7 +266,7 @@
               </p>
             </section>
 
-            <section class="card" style="display: none;">
+            <section class="card hidden">
               <div class="status">
                 <span>Primary color contrast matrix (background × foreground)</span>
                 <span class="pill" id="primary-matrix-pass-count">0</span>
@@ -334,7 +333,7 @@
                 <section class="card">
                   <div class="status">
                     <span>Token output</span>
-                    <div style="display: flex; gap: 12px; align-items: center;">
+                    <div class="flex-gap-center">
                       <span class="pill" id="token-count">0</span>
                       <div class="output-format-toggle">
                         <button class="format-btn active" data-format="json">JSON</button>

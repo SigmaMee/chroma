@@ -238,16 +238,12 @@ const welcomeGenerateBtn = document.getElementById("welcomeGenerateBtn");
 
 // Initialize welcome page
 function initWelcomePage() {
-  console.log("initWelcomePage called");
-  console.log("welcomeGenerateBtn element:", welcomeGenerateBtn);
-  console.log("welcomePrimaryHex element:", welcomePrimaryHex);
-  console.log("welcomePrimaryColor element:", welcomePrimaryColor);
-  console.log("welcomeSwatch element:", welcomeSwatch);
-  
   if (!welcomeGenerateBtn) {
-    console.error("welcomeGenerateBtn not found!");
     return;
   }
+  
+  // Set initial swatch color
+  welcomeSwatch.style.backgroundColor = welcomePrimaryColor.value;
   
   // Sync color picker and hex input (debounced)
   welcomePrimaryColor.addEventListener("input", Performance.debounce((e) => {
@@ -345,15 +341,14 @@ let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
 
 function generateRandomTintAmounts() {
-  tintAmounts.low = 10 + Math.random() * 8;    // 10-18%
-  tintAmounts.mid = 19 + Math.random() * 6;    // 19-25%
-  tintAmounts.high = 26 + Math.random() * 9;   // 26-35%
+  tintAmounts.low = 0 + Math.random() * 10;    // 0-10%
+  tintAmounts.mid = 11 + Math.random() * 10;   // 11-20%
+  tintAmounts.high = 21 + Math.random() * 10;  // 21-30%
 }
 
 const prefixInput = document.getElementById("prefix");
 const derivedHexInput = document.getElementById("derivedHex");
 const derivedSwatch = document.getElementById("derivedSwatch");
-const derivedLabel = document.getElementById("derivedLabel");
 const scaleGrid = document.getElementById("scale-grid");
 const scaleCount = document.getElementById("scale-count");
 const primaryScaleGrid = document.getElementById("primary-grid");
@@ -1478,12 +1473,10 @@ function updateDerivedPreview() {
   if (!derived) {
     derivedHexInput.value = "";
     derivedSwatch.style.background = "#222";
-    derivedLabel.textContent = "invalid";
     return null;
   }
   derivedHexInput.value = derived.hex;
   derivedSwatch.style.background = derived.hex;
-  derivedLabel.textContent = derived.hex;
   
   // Update harmony card swatches with current primary color
   updateHarmonySwatches();
@@ -2625,7 +2618,6 @@ function initHarmonySwatches() {
     swatch.addEventListener("click", (event) => {
       event.stopPropagation();
       event.preventDefault();
-      console.log('Harmony click detected!');
       // Remove active class from all swatches
       harmonySwatches.forEach((s) => s.classList.remove("active"));
       // Add active class to clicked swatch
@@ -2659,7 +2651,6 @@ function initTintAmountSwitches() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       event.preventDefault();
-      console.log('Tint switch click detected!');
       // Remove active class from all amount buttons
       tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
       // Add active class to clicked button
@@ -2801,7 +2792,6 @@ resetBtn.addEventListener("click", () => {
   tokenCount.textContent = "0";
   derivedHexInput.value = "";
   derivedSwatch.style.background = "#222";
-  derivedLabel.textContent = "—";
   // Update tint amount switch UI
   const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
   tintAmountSwitches.forEach((btn) => btn.classList.remove("active"));
@@ -2824,7 +2814,6 @@ initWelcomePage();
 if (typeof initConfig === 'function') {
   initConfig().then(() => {
     // Config has loaded and rebuilt the buttons, now attach event listeners
-    console.log('Config loaded, re-initializing event listeners');
     initHarmonySwatches();
     initTintAmountSwitches();
   });

@@ -1,0 +1,195 @@
+# Coding Conventions for Chroma
+
+## CSS & Styling
+
+### Units
+- **Use rem/em/% for scalability** - Avoid `px` except for:
+  - Borders and outlines (`1px`, `2px`)
+  - Box shadows
+  - Grid `minmax()` minimum values
+  - Negative margins for precise alignment
+  - Letter-spacing fine-tuning
+  - Transform animations
+- **Base**: 16px = 1rem (browser default)
+- **Common conversions**: 4px = 0.25rem, 8px = 0.5rem, 12px = 0.75rem, 16px = 1rem, 24px = 1.5rem
+- **Media queries**: Use `em` units (64em, 48em, 30em)
+
+### Architecture
+- **No inline styles** - Use CSS classes exclusively
+- **Utility-first approach** - Create reusable classes for common patterns
+- **Semantic class names** - `.section-heading`, `.subsection-label`, not `.mb-12` or `.text-sm`
+- **CSS Custom Properties** - Use `:root` variables for colors, spacing, transitions
+- **Maintain backups** - Create `.backup` files before major refactoring
+
+### Organization
+- Group related styles together
+- Add section comments with clear separators
+- Keep vendor prefixes (-webkit-, -moz-) for critical features
+- Media queries at bottom or inline with components
+
+## JavaScript
+
+### Modern Patterns
+- **Async/await over promises** - More readable, easier error handling
+- **Module imports** - Use ES6 modules where supported
+- **Const by default** - Use `let` only when reassignment needed
+- **Arrow functions** - For callbacks and short functions
+- **Template literals** - For string interpolation
+
+### Safety & Validation
+- **Null safety checks** - Always verify DOM elements exist before manipulation
+- **Error handling** - Try/catch for async operations, user-facing error messages
+- **Input validation** - Check user inputs before processing
+- **Type checking** - Validate data types when accepting parameters
+
+### DOM Manipulation
+- **Wait for async operations** - Attach event listeners after DOM is ready/rebuilt
+- **Event delegation** - Use `addEventListener`, avoid inline handlers
+- **Clean initialization** - Separate init functions for different features
+- **State management** - Centralize application state, avoid scattered globals
+
+### Code Quality
+- **No console.log in production** - Remove all debug logging before commits
+- **Meaningful names** - `generateTokens()` not `doStuff()`
+- **Single responsibility** - Functions should do one thing well
+- **DRY principle** - Extract repeated code into reusable functions
+- **Comments for "why"** - Explain intent, not what code does
+
+## HTML & Accessibility
+
+### Semantic HTML
+- Use proper elements: `<button>` for actions, `<a>` for navigation
+- `<label>` must be associated with form inputs via `for` attribute
+- Use `<div>` or headings (`<h1>`-`<h6>`) for non-input labels
+- Proper heading hierarchy (don't skip levels)
+
+### ARIA & Accessibility
+- Add `aria-label` to buttons without text content
+- Use `aria-selected` for tabs and toggles
+- Add `aria-live` regions for dynamic content
+- Include `role` attributes where semantic elements insufficient
+- `aria-hidden="true"` for decorative icons
+- Focus indicators required (`:focus-visible`)
+
+### Best Practices
+- Alt text for all images
+- Skip-to-main link for screen readers
+- Keyboard navigation support (Enter, Space, Arrow keys)
+- Color contrast ratios: 4.5:1 for normal text, 3:1 for large text
+- Support `prefers-reduced-motion` media query
+
+## Git Commits
+
+### Message Format
+```
+<type>: <short description>
+
+- Bullet point details of changes
+- Include technical specifics
+- Reference affected files/functions
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code restructuring without behavior change
+- `style`: CSS/formatting changes
+- `docs`: Documentation updates
+- `perf`: Performance improvements
+- `test`: Test additions/updates
+- `chore`: Build process, dependencies
+
+### Examples
+```
+fix: Harmony mode buttons not clickable after config load
+
+- Fixed async config loading timing issue
+- Event listeners now attach after config rebuilds UI
+- Fixed primary scale element ID mismatch
+```
+
+## File Organization
+
+### Structure
+```
+/web
+  index.html          # Main app HTML
+  styles.css          # All styles (1300+ lines)
+  main.js             # Core logic (2800+ lines)
+  config.json         # User-facing content
+  config-loader.js    # Dynamic config loading
+  tests.html          # Test utilities
+```
+
+### When to Split Files
+- JavaScript modules > 3000 lines
+- CSS files > 2000 lines (consider components)
+- Shared utilities used across multiple files
+- Configuration vs implementation
+
+## Performance
+
+### Loading
+- Minimize blocking scripts
+- Use `async`/`defer` for non-critical JS
+- Lazy load images/content below fold
+- Optimize image formats (WebP with fallbacks)
+
+### Runtime
+- Debounce/throttle frequent events (scroll, resize, input)
+- Use `requestAnimationFrame` for animations
+- Minimize DOM queries (cache selectors)
+- Batch DOM updates to avoid reflows
+
+## Browser Support
+
+### Core Features
+- Modern evergreen browsers (Chrome, Firefox, Safari, Edge)
+- CSS Grid, Flexbox
+- ES6+ JavaScript features
+- CSS Custom Properties
+
+### Progressive Enhancement
+- Provide fallbacks for `color-scheme`
+- Vendor prefixes for critical CSS
+- Feature detection over browser detection
+- Graceful degradation for older browsers
+
+## Testing
+
+### Manual Testing Checklist
+- Test keyboard navigation (Tab, Enter, Space)
+- Verify screen reader announcements
+- Check all breakpoints (mobile, tablet, desktop)
+- Test with browser font size changes (accessibility)
+- Validate color contrast ratios
+- Test with reduced motion preference
+
+### Code Validation
+- HTML validation (W3C)
+- CSS validation
+- JavaScript linting
+- Accessibility audits (Lighthouse, axe)
+
+## Project-Specific Notes
+
+### Random Generation
+- Tint amounts generated once on page load
+- Values persist across option changes
+- Ranges: LOW (0-10%), MID (11-20%), HIGH (21-30%)
+
+### Async Config Loading
+- `config-loader.js` rebuilds UI dynamically
+- Event listeners must wait for `initConfig().then()`
+- Config changes don't require code deployments
+
+### Color Scales
+- Primary: 11 steps (50, 100, 200...900, 950)
+- Neutral: 10 steps (100, 200...900)
+- Harmony modes: 4 types (Monochromatic, Complementary, Analogous, Triadic)
+
+---
+
+**Last Updated**: December 2025
+**Maintained By**: Development team
+**Questions**: See CONFIG_GUIDE.md, README.md, or inline code comments
