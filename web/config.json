@@ -28,7 +28,7 @@
       "variant": "",
       "title": "Unity",
       "description": "Unified, pure tonal variation. All neutrals share identical temperature.",
-      "icon": "Unity.svg",
+      "icon": "assets/Unity.svg",
       "tooltip": "Monochromatic (same hue)"
     },
     {
@@ -37,7 +37,7 @@
       "variant": "",
       "title": "Opposition",
       "description": "Maximum contrast, opposing warmth. Creates dramatic cool vs warm neutrals.",
-      "icon": "Opposition.svg",
+      "icon": "assets/Opposition.svg",
       "tooltip": "Complementary (180°)"
     },
     {
@@ -46,7 +46,7 @@
       "variant": "plus",
       "title": "Harmony",
       "description": "Harmonious, gentle variation. Subtle temperature shift within same color family.",
-      "icon": "Harmony.svg",
+      "icon": "assets/Harmony.svg",
       "tooltip": "Analogous +30°"
     },
     {
@@ -55,7 +55,7 @@
       "variant": "minus",
       "title": "Harmony",
       "description": "Harmonious, gentle variation. Subtle temperature shift within same color family.",
-      "icon": "Harmony.svg",
+      "icon": "assets/Harmony.svg",
       "tooltip": "Analogous -30°"
     },
     {
@@ -64,7 +64,7 @@
       "variant": "plus",
       "title": "Vibrancy",
       "description": "Balanced but vibrant, evenly spaced. Moderate contrast with balanced temperature.",
-      "icon": "Vibrance.svg",
+      "icon": "assets/Vibrance.svg",
       "tooltip": "Triadic +120°"
     },
     {
@@ -73,7 +73,7 @@
       "variant": "minus",
       "title": "Vibrancy",
       "description": "Balanced but vibrant, evenly spaced. Moderate contrast with balanced temperature.",
-      "icon": "Vibrance.svg",
+      "icon": "assets/Vibrance.svg",
       "tooltip": "Triadic -120°"
     }
   ],
