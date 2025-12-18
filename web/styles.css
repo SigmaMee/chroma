@@ -934,6 +934,21 @@ input[type="color"] {
   background: var(--surface);
 }
 
+.harmony-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+  text-align: center;
+}
+
+.harmony-icon {
+  width: auto;
+  height: 6rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
 .harmony-header h3 {
   font-size: 0.875rem;
   font-weight: 600;

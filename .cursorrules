@@ -188,6 +188,9 @@ fix: Harmony mode buttons not clickable after config load
 - Neutral: 10 steps (100, 200...900)
 - Harmony modes: 4 types (Monochromatic, Complementary, Analogous, Triadic)
 
+### Content Safeguards
+- Do not overwrite human-written UI copy (labels, descriptions, helper text) without explicit instruction; respect existing wording and tone.
+
 ---
 
 **Last Updated**: December 2025

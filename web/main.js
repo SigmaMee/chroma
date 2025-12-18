@@ -341,9 +341,10 @@ let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
 
 function generateRandomTintAmounts() {
-  tintAmounts.low = 0 + Math.random() * 10;    // 0-10%
-  tintAmounts.mid = 11 + Math.random() * 10;   // 11-20%
-  tintAmounts.high = 21 + Math.random() * 10;  // 21-30%
+  // Keep a non-zero floor so hue shifts stay visible and avoid rounding to 0
+  tintAmounts.low = 5 + Math.random() * 5;    // 5-10%
+  tintAmounts.mid = 12 + Math.random() * 6;   // 12-18%
+  tintAmounts.high = 22 + Math.random() * 6;  // 22-28%
 }
 
 const prefixInput = document.getElementById("prefix");
@@ -1486,7 +1487,8 @@ function updateDerivedPreview() {
 
 function updateHarmonySwatches() {
   const primaryColor = primaryInput.value;
-  const saturation = 14; // Mid-range saturation for preview
+  // Use the actual saturation from the user's tint selection, not a hardcoded preview value
+  const saturation = satInput ? Number(satInput.value) : 14;
   
   // Define all harmony modes and their hue shifts
   const modes = [
@@ -2826,6 +2828,7 @@ if (typeof initConfig === 'function') {
 // Generate random tint amounts on app load
 generateRandomTintAmounts();
 if (satInput) {
+  // Use low by default (now floored above 0 to avoid grey collisions)
   satInput.value = Math.round(tintAmounts.low * 100) / 100;
 }
 

@@ -67,9 +67,9 @@ function applyConfig(config) {
     if (generateBtn) generateBtn.textContent = config.controls.generateButton;
 
     // Update harmony mode label and helper
-    const harmonyModeSection = document.querySelector('.harmony-cards').parentElement;
+    const harmonyModeSection = document.querySelector('.option-label');
     if (harmonyModeSection) {
-      const harmonyLabel = harmonyModeSection.querySelector('label');
+      const harmonyLabel = harmonyModeSection;
       const harmonyHelper = harmonyModeSection.querySelector('.helper');
       if (harmonyLabel) harmonyLabel.childNodes[0].textContent = config.controls.harmonyModeLabel + ' ';
       if (harmonyHelper) harmonyHelper.textContent = config.controls.harmonyModeHelper;
@@ -98,8 +98,13 @@ function applyConfig(config) {
           groupedModes[mode.title] = {
             title: mode.title,
             description: mode.description,
+            icon: mode.icon || null,
             variants: []
           };
+        }
+        // Prefer the first provided icon if multiple variants share a title
+        if (!groupedModes[mode.title].icon && mode.icon) {
+          groupedModes[mode.title].icon = mode.icon;
         }
         groupedModes[mode.title].variants.push(mode);
       });
@@ -112,6 +117,7 @@ function applyConfig(config) {
         const header = document.createElement('div');
         header.className = 'harmony-header';
         header.innerHTML = `
+          ${group.icon ? `<img src="${group.icon}" alt="${group.title} icon" class="harmony-icon" />` : ''}
           <h3>${group.title}</h3>
           <p class="harmony-description">${group.description}</p>
         `;
