@@ -343,18 +343,30 @@ let currentOutputFormat = 'json'; // Track current output format
 let currentNeutralScale = [];
 let currentPrimaryScale = [];
 
+// Reuseable helper to enforce step bounds and minimum total of 5
+function sanitizeStepCounts(before, after) {
+  let safeBefore = Math.max(2, Math.min(16, Number.isFinite(before) ? before : 2));
+  let safeAfter = Math.max(2, Math.min(16, Number.isFinite(after) ? after : 2));
+  const total = safeBefore + safeAfter + 1;
+  if (total < 5) {
+    safeBefore = Math.max(safeBefore, 2);
+    safeAfter = Math.max(safeAfter, 2);
+  }
+  return { before: safeBefore, after: safeAfter };
+}
+
 // Palette generation settings
 let paletteSettings = {
   neutral: {
-    stepsBefore: 4,
-    stepsAfter: 5,
+    stepsBefore: 5,
+    stepsAfter: 6,
     easing: {
       curveType: 'cubic',
       easingType: 'inOut'
     }
   },
   primary: {
-    stepsBefore: 4,
+    stepsBefore: 5,
     stepsAfter: 6,
     easing: {
       curveType: 'cubic',
@@ -579,11 +591,16 @@ function generateGreyscaleScale(data) {
   const { hsl, saturation } = data;
   let lighterSteps = paletteSettings.neutral.stepsBefore;
   let darkerSteps = paletteSettings.neutral.stepsAfter;
+  // Apply selected easing for neutral palette
+  const neutralCurve = paletteSettings?.neutral?.easing?.curveType || 'cubic';
+  const neutralEase = paletteSettings?.neutral?.easing?.easingType || 'inOut';
+  const neutralEaseFn = getEasingFunction(neutralCurve, neutralEase);
 
   const lighten = [];
   for (let i = 1; i <= lighterSteps; i += 1) {
-    const ratio = i / (lighterSteps + 1);
-    const lightness = clamp(hsl.l + (1 - hsl.l) * ratio, 0, 1);
+    const t = i / (lighterSteps + 1);
+    const et = neutralEaseFn(t);
+    const lightness = clamp(hsl.l + (1 - hsl.l) * et, 0, 1);
     const rgb = hslToRgb(hsl.h, saturation, lightness);
     lighten.push({
       hex: rgbToHex(rgb.r, rgb.g, rgb.b),
@@ -593,8 +610,9 @@ function generateGreyscaleScale(data) {
 
   const darken = [];
   for (let i = 1; i <= darkerSteps; i += 1) {
-    const ratio = i / (darkerSteps + 1);
-    const lightness = clamp(hsl.l - hsl.l * ratio, 0, 1);
+    const t = i / (darkerSteps + 1);
+    const et = neutralEaseFn(t);
+    const lightness = clamp(hsl.l - hsl.l * et, 0, 1);
     const rgb = hslToRgb(hsl.h, saturation, lightness);
     darken.push({
       hex: rgbToHex(rgb.r, rgb.g, rgb.b),
@@ -607,14 +625,12 @@ function generateGreyscaleScale(data) {
     .concat([{ hex: data.hex, lightness: hsl.l }])
     .concat(darken.sort((a, b) => b.lightness - a.lightness));
 
-  const totalSteps = paletteSettings.neutral.stepsBefore + paletteSettings.neutral.stepsAfter + 1;
-  const scaleLabels = generateScaleLabels(totalSteps);
-
-  return ordered.slice(0, totalSteps).map((entry, index) => ({
-    name: `greyscale.scale.${scaleLabels[index]}`,
-    hex: entry.hex,
-    isSeed: entry.hex === data.hex,
-  }));
+  return mapScaleToLabels(
+    ordered,
+    lighterSteps,
+    darkerSteps,
+    'greyscale.scale'
+  );
 }
 
 function generatePrimaryScale(data) {
@@ -625,11 +641,16 @@ function generatePrimaryScale(data) {
   const { hsl } = data;
   let lighterSteps = paletteSettings.primary.stepsBefore;
   let darkerSteps = paletteSettings.primary.stepsAfter;
+  // Apply selected easing for primary palette
+  const primaryCurve = paletteSettings?.primary?.easing?.curveType || 'cubic';
+  const primaryEase = paletteSettings?.primary?.easing?.easingType || 'inOut';
+  const primaryEaseFn = getEasingFunction(primaryCurve, primaryEase);
 
   const lighten = [];
   for (let i = 1; i <= lighterSteps; i += 1) {
-    const ratio = i / (lighterSteps + 1);
-    const lightness = clamp(hsl.l + (1 - hsl.l) * ratio, 0, 1);
+    const t = i / (lighterSteps + 1);
+    const et = primaryEaseFn(t);
+    const lightness = clamp(hsl.l + (1 - hsl.l) * et, 0, 1);
     const rgb = hslToRgb(hsl.h, hsl.s, lightness);
     lighten.push({
       hex: rgbToHex(rgb.r, rgb.g, rgb.b),
@@ -639,8 +660,9 @@ function generatePrimaryScale(data) {
 
   const darken = [];
   for (let i = 1; i <= darkerSteps; i += 1) {
-    const ratio = i / (darkerSteps + 1);
-    const lightness = clamp(hsl.l - hsl.l * ratio, 0, 1);
+    const t = i / (darkerSteps + 1);
+    const et = primaryEaseFn(t);
+    const lightness = clamp(hsl.l - hsl.l * et, 0, 1);
     const rgb = hslToRgb(hsl.h, hsl.s, lightness);
     darken.push({
       hex: rgbToHex(rgb.r, rgb.g, rgb.b),
@@ -653,25 +675,60 @@ function generatePrimaryScale(data) {
     .concat([{ hex: data.hex, lightness: hsl.l }])
     .concat(darken.sort((a, b) => b.lightness - a.lightness));
 
-  const totalSteps = paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter + 1;
-  const scaleLabels = generateScaleLabels(totalSteps);
-
-  return ordered.slice(0, totalSteps).map((entry, index) => ({
-    name: `color.primary.${scaleLabels[index]}`,
-    hex: entry.hex,
-    isSeed: entry.hex === data.hex,
-  }));
+  return mapScaleToLabels(
+    ordered,
+    lighterSteps,
+    darkerSteps,
+    'color.primary'
+  );
 }
 
-// Generate scale labels dynamically based on total steps
-function generateScaleLabels(totalSteps) {
-  // Max 12 predefined scale labels: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
-  const allLabels = [25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-  
-  // For totalSteps requested, return the first totalSteps labels from the predefined list
-  // This ensures we get nice round numbers and cut from the bottom
-  const labels = allLabels.slice(0, totalSteps).map(l => l.toString());
-  return labels;
+// Generate scale labels with seed always at 500 (index 6)
+// Always returns the full 12-label array: [25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
+function generateScaleLabels() {
+  // Full 12 predefined scale labels centered on 500 (index 6)
+  return ['25', '50', '100', '200', '300', '400', '500', '600', '700', '800', '900', '950'];
+}
+
+// Map an ordered list of colors to the fixed label set, keeping the seed at 500
+function mapScaleToLabels(ordered, stepsBefore, stepsAfter, prefix) {
+  const labels = generateScaleLabels();
+  const seedLabelIndex = labels.indexOf('500');
+  const total = stepsBefore + stepsAfter + 1;
+
+  // If the requested window meets or exceeds the available labels, return the full contiguous set.
+  if (total >= labels.length) {
+    return ordered.slice(0, labels.length).map((entry, index) => ({
+      name: `${prefix}.${labels[index]}`,
+      hex: entry.hex,
+      isSeed: index === seedLabelIndex,
+    }));
+  }
+
+  // Start centered on the seed, then shift the window to keep it contiguous inside bounds.
+  let start = seedLabelIndex - stepsBefore;
+  let end = seedLabelIndex + stepsAfter;
+
+  if (start < 0) {
+    const shift = -start;
+    start = 0;
+    end = Math.min(labels.length - 1, end + shift);
+  }
+
+  if (end > labels.length - 1) {
+    const shift = end - (labels.length - 1);
+    end = labels.length - 1;
+    start = Math.max(0, start - shift);
+  }
+
+  const windowLabels = labels.slice(start, end + 1);
+  const trimmed = ordered.slice(0, windowLabels.length);
+
+  return trimmed.map((entry, index) => ({
+    name: `${prefix}.${windowLabels[index]}`,
+    hex: entry.hex,
+    isSeed: index === stepsBefore,
+  }));
 }
 
 // Easing function implementations
@@ -738,14 +795,14 @@ function renderPreviewStrip(containerId, colors) {
 }
 
 // Build eased preview colors for neutral palette
-function buildNeutralPreviewColors(curveType, easingType) {
+function buildNeutralPreviewColors(curveType, easingType, stepsBeforeOverride, stepsAfterOverride) {
   try {
     const derived = updateDerivedPreview();
     if (!derived || !derived.hsl) return currentNeutralScale.map(e => e.hex);
     const easeFn = getEasingFunction(curveType, easingType);
     const { hsl, saturation } = derived;
-    const lighterSteps = paletteSettings.neutral.stepsBefore;
-    const darkerSteps = paletteSettings.neutral.stepsAfter;
+    const lighterSteps = Number.isFinite(stepsBeforeOverride) ? stepsBeforeOverride : paletteSettings.neutral.stepsBefore;
+    const darkerSteps = Number.isFinite(stepsAfterOverride) ? stepsAfterOverride : paletteSettings.neutral.stepsAfter;
     const colors = [];
     // lighter side (from near-seed to lightest)
     const lighten = [];
@@ -788,15 +845,15 @@ function buildNeutralPreviewColors(curveType, easingType) {
 }
 
 // Build eased preview colors for primary palette
-function buildPrimaryPreviewColors(curveType, easingType) {
+function buildPrimaryPreviewColors(curveType, easingType, stepsBeforeOverride, stepsAfterOverride) {
   try {
     const primaryHex = normalizeHex(primaryInput && primaryInput.value ? primaryInput.value : "");
     const prgb = primaryHex ? hexToRgb(primaryHex) : null;
     if (!prgb) return currentPrimaryScale.map(e => e.hex);
     const hsl = rgbToHsl(prgb.r, prgb.g, prgb.b);
     const easeFn = getEasingFunction(curveType, easingType);
-    const lighterSteps = paletteSettings.primary.stepsBefore;
-    const darkerSteps = paletteSettings.primary.stepsAfter;
+    const lighterSteps = Number.isFinite(stepsBeforeOverride) ? stepsBeforeOverride : paletteSettings.primary.stepsBefore;
+    const darkerSteps = Number.isFinite(stepsAfterOverride) ? stepsAfterOverride : paletteSettings.primary.stepsAfter;
     const colors = [];
     const lighten = [];
     for (let i = 1; i <= lighterSteps; i++) {
@@ -3038,19 +3095,51 @@ const modalTabContents = document.querySelectorAll('.modal-tab-content');
 if (paletteSettingsBtn) {
   paletteSettingsBtn.addEventListener('click', () => {
     paletteSettingsModal.classList.remove('hidden');
-    // Sync select values with current settings and draw curves
+    // Sync slider values with current settings
     setTimeout(() => {
+      const nSliderBefore = document.getElementById('neutral-slider-before');
+      const nSliderAfter = document.getElementById('neutral-slider-after');
+      const pSliderBefore = document.getElementById('primary-slider-before');
+      const pSliderAfter = document.getElementById('primary-slider-after');
       const nCurve = document.getElementById('neutral-easing-curve-type');
       const nEase = document.getElementById('neutral-easing-easing-type');
       const pCurve = document.getElementById('primary-easing-curve-type');
       const pEase = document.getElementById('primary-easing-easing-type');
+      
+      if (nSliderBefore) {
+        nSliderBefore.value = paletteSettings.neutral.stepsBefore;
+        document.querySelector('#neutral-settings .slider-input-group:nth-child(1) .slider-value').textContent = paletteSettings.neutral.stepsBefore;
+      }
+      if (nSliderAfter) {
+        nSliderAfter.value = paletteSettings.neutral.stepsAfter;
+        document.querySelector('#neutral-settings .slider-input-group:nth-child(2) .slider-value').textContent = paletteSettings.neutral.stepsAfter;
+      }
+      if (pSliderBefore) {
+        pSliderBefore.value = paletteSettings.primary.stepsBefore;
+        document.querySelector('#primary-settings .slider-input-group:nth-child(1) .slider-value').textContent = paletteSettings.primary.stepsBefore;
+      }
+      if (pSliderAfter) {
+        pSliderAfter.value = paletteSettings.primary.stepsAfter;
+        document.querySelector('#primary-settings .slider-input-group:nth-child(2) .slider-value').textContent = paletteSettings.primary.stepsAfter;
+      }
+
       if (nCurve) nCurve.value = paletteSettings.neutral.easing.curveType;
       if (nEase) nEase.value = paletteSettings.neutral.easing.easingType;
       if (pCurve) pCurve.value = paletteSettings.primary.easing.curveType;
       if (pEase) pEase.value = paletteSettings.primary.easing.easingType;
 
-      const neutralColors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
-      const primaryColors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+      const neutralColors = buildNeutralPreviewColors(
+        nCurve?.value || 'cubic',
+        nEase?.value || 'inOut',
+        paletteSettings.neutral.stepsBefore,
+        paletteSettings.neutral.stepsAfter
+      );
+      const primaryColors = buildPrimaryPreviewColors(
+        pCurve?.value || 'cubic',
+        pEase?.value || 'inOut',
+        paletteSettings.primary.stepsBefore,
+        paletteSettings.primary.stepsAfter
+      );
       renderPreviewStrip('neutral-preview-strip', neutralColors);
       renderPreviewStrip('primary-preview-strip', primaryColors);
     }, 0);
@@ -3071,39 +3160,20 @@ if (modalCancelBtn) {
 
 if (modalApplyBtn) {
   modalApplyBtn.addEventListener('click', () => {
-    // Read and validate settings from inputs
-    let neutralStepsBefore = parseInt(document.getElementById('neutral-steps-before').value) || 4;
-    let neutralStepsAfter = parseInt(document.getElementById('neutral-steps-after').value) || 5;
-    let primaryStepsBefore = parseInt(document.getElementById('primary-steps-before').value) || 4;
-    let primaryStepsAfter = parseInt(document.getElementById('primary-steps-after').value) || 6;
+    // Read slider values directly (2-16 range)
+    const nBeforeRaw = Number.parseInt(document.getElementById('neutral-slider-before')?.value, 10);
+    const nAfterRaw = Number.parseInt(document.getElementById('neutral-slider-after')?.value, 10);
+    const pBeforeRaw = Number.parseInt(document.getElementById('primary-slider-before')?.value, 10);
+    const pAfterRaw = Number.parseInt(document.getElementById('primary-slider-after')?.value, 10);
+    const nBefore = clamp(Number.isFinite(nBeforeRaw) ? nBeforeRaw : paletteSettings.neutral.stepsBefore, 2, 5);
+    const nAfter = clamp(Number.isFinite(nAfterRaw) ? nAfterRaw : paletteSettings.neutral.stepsAfter, 2, 6);
+    const pBefore = clamp(Number.isFinite(pBeforeRaw) ? pBeforeRaw : paletteSettings.primary.stepsBefore, 2, 5);
+    const pAfter = clamp(Number.isFinite(pAfterRaw) ? pAfterRaw : paletteSettings.primary.stepsAfter, 2, 6);
     
-    // Clamp values to min/max, ensuring minimum total steps of 5 for meaningful semantic tokens
-    // (seed requires at least 2 steps before + 2 steps after)
-    neutralStepsBefore = Math.max(1, Math.min(16, neutralStepsBefore));
-    neutralStepsAfter = Math.max(1, Math.min(16, neutralStepsAfter));
-    
-    // Enforce minimum total of 5 steps (4 around seed + 1 seed)
-    const neutralTotal = neutralStepsBefore + neutralStepsAfter + 1;
-    if (neutralTotal < 5) {
-      // Redistribute: if total is less than 5, enforce minimum of 2 on each side
-      neutralStepsBefore = Math.max(neutralStepsBefore, 2);
-      neutralStepsAfter = Math.max(neutralStepsAfter, 2);
-    }
-    
-    primaryStepsBefore = Math.max(1, Math.min(16, primaryStepsBefore));
-    primaryStepsAfter = Math.max(1, Math.min(16, primaryStepsAfter));
-    
-    // Same enforcement for primary
-    const primaryTotal = primaryStepsBefore + primaryStepsAfter + 1;
-    if (primaryTotal < 5) {
-      primaryStepsBefore = Math.max(primaryStepsBefore, 2);
-      primaryStepsAfter = Math.max(primaryStepsAfter, 2);
-    }
-    
-    paletteSettings.neutral.stepsBefore = neutralStepsBefore;
-    paletteSettings.neutral.stepsAfter = neutralStepsAfter;
-    paletteSettings.primary.stepsBefore = primaryStepsBefore;
-    paletteSettings.primary.stepsAfter = primaryStepsAfter;
+    paletteSettings.neutral.stepsBefore = nBefore;
+    paletteSettings.neutral.stepsAfter = nAfter;
+    paletteSettings.primary.stepsBefore = pBefore;
+    paletteSettings.primary.stepsAfter = pAfter;
     
     // Read per-palette easing settings
     const nCurveVal = document.getElementById('neutral-easing-curve-type')?.value || 'cubic';
@@ -3143,12 +3213,30 @@ modalTabBtns.forEach((btn) => {
       if (tabName === 'neutral-settings') {
         const nCurve = document.getElementById('neutral-easing-curve-type');
         const nEase = document.getElementById('neutral-easing-easing-type');
-        const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+        const nSteps = sanitizeStepCounts(
+          Number.parseInt(document.getElementById('neutral-slider-before')?.value, 10),
+          Number.parseInt(document.getElementById('neutral-slider-after')?.value, 10)
+        );
+        const colors = buildNeutralPreviewColors(
+          nCurve?.value || 'cubic',
+          nEase?.value || 'inOut',
+          nSteps.before,
+          nSteps.after
+        );
         renderPreviewStrip('neutral-preview-strip', colors);
       } else if (tabName === 'primary-settings') {
         const pCurve = document.getElementById('primary-easing-curve-type');
         const pEase = document.getElementById('primary-easing-easing-type');
-        const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+        const pSteps = sanitizeStepCounts(
+          Number.parseInt(document.getElementById('primary-slider-before')?.value, 10),
+          Number.parseInt(document.getElementById('primary-slider-after')?.value, 10)
+        );
+        const colors = buildPrimaryPreviewColors(
+          pCurve?.value || 'cubic',
+          pEase?.value || 'inOut',
+          pSteps.before,
+          pSteps.after
+        );
         renderPreviewStrip('primary-preview-strip', colors);
       }
     }, 0);
@@ -3160,13 +3248,21 @@ const nCurveTypeSelect = document.getElementById('neutral-easing-curve-type');
 const nEasingTypeSelect = document.getElementById('neutral-easing-easing-type');
 if (nCurveTypeSelect) {
   nCurveTypeSelect.addEventListener('change', () => {
-    const colors = buildNeutralPreviewColors(nCurveTypeSelect.value, nEasingTypeSelect?.value || 'inOut');
+    const steps = sanitizeStepCounts(
+      Number.parseInt(document.getElementById('neutral-slider-before')?.value, 10),
+      Number.parseInt(document.getElementById('neutral-slider-after')?.value, 10)
+    );
+    const colors = buildNeutralPreviewColors(nCurveTypeSelect.value, nEasingTypeSelect?.value || 'inOut', steps.before, steps.after);
     renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
 if (nEasingTypeSelect) {
   nEasingTypeSelect.addEventListener('change', () => {
-    const colors = buildNeutralPreviewColors(nCurveTypeSelect?.value || 'cubic', nEasingTypeSelect.value);
+    const steps = sanitizeStepCounts(
+      Number.parseInt(document.getElementById('neutral-slider-before')?.value, 10),
+      Number.parseInt(document.getElementById('neutral-slider-after')?.value, 10)
+    );
+    const colors = buildNeutralPreviewColors(nCurveTypeSelect?.value || 'cubic', nEasingTypeSelect.value, steps.before, steps.after);
     renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
@@ -3176,52 +3272,76 @@ const pCurveTypeSelect = document.getElementById('primary-easing-curve-type');
 const pEasingTypeSelect = document.getElementById('primary-easing-easing-type');
 if (pCurveTypeSelect) {
   pCurveTypeSelect.addEventListener('change', () => {
-    const colors = buildPrimaryPreviewColors(pCurveTypeSelect.value, pEasingTypeSelect?.value || 'inOut');
+    const steps = sanitizeStepCounts(
+      Number.parseInt(document.getElementById('primary-slider-before')?.value, 10),
+      Number.parseInt(document.getElementById('primary-slider-after')?.value, 10)
+    );
+    const colors = buildPrimaryPreviewColors(pCurveTypeSelect.value, pEasingTypeSelect?.value || 'inOut', steps.before, steps.after);
     renderPreviewStrip('primary-preview-strip', colors);
   });
 }
 if (pEasingTypeSelect) {
   pEasingTypeSelect.addEventListener('change', () => {
-    const colors = buildPrimaryPreviewColors(pCurveTypeSelect?.value || 'cubic', pEasingTypeSelect.value);
+    const steps = sanitizeStepCounts(
+      Number.parseInt(document.getElementById('primary-slider-before')?.value, 10),
+      Number.parseInt(document.getElementById('primary-slider-after')?.value, 10)
+    );
+    const colors = buildPrimaryPreviewColors(pCurveTypeSelect?.value || 'cubic', pEasingTypeSelect.value, steps.before, steps.after);
     renderPreviewStrip('primary-preview-strip', colors);
   });
 }
 
-// Update preview when step numbers change (live feedback)
-const neutralStepsBeforeInput = document.getElementById('neutral-steps-before');
-const neutralStepsAfterInput = document.getElementById('neutral-steps-after');
-if (neutralStepsBeforeInput) {
-  neutralStepsBeforeInput.addEventListener('input', () => {
+// Update preview when step numbers change (live feedback) - now using sliders
+const neutralSliderBefore = document.getElementById('neutral-slider-before');
+const neutralSliderAfter = document.getElementById('neutral-slider-after');
+if (neutralSliderBefore) {
+  neutralSliderBefore.addEventListener('input', () => {
+    const before = Number.parseInt(neutralSliderBefore.value, 10);
+    const after = Number.parseInt(neutralSliderAfter?.value, 10) || 5;
+    document.querySelector('#neutral-settings .slider-input-group:nth-child(1) .slider-value').textContent = before;
+    
     const nCurve = document.getElementById('neutral-easing-curve-type');
     const nEase = document.getElementById('neutral-easing-easing-type');
-    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut', before, after);
     renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
-if (neutralStepsAfterInput) {
-  neutralStepsAfterInput.addEventListener('input', () => {
+if (neutralSliderAfter) {
+  neutralSliderAfter.addEventListener('input', () => {
+    const before = Number.parseInt(neutralSliderBefore?.value, 10) || 4;
+    const after = Number.parseInt(neutralSliderAfter.value, 10);
+    document.querySelector('#neutral-settings .slider-input-group:nth-child(2) .slider-value').textContent = after;
+    
     const nCurve = document.getElementById('neutral-easing-curve-type');
     const nEase = document.getElementById('neutral-easing-easing-type');
-    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut', before, after);
     renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
 
-const primaryStepsBeforeInput = document.getElementById('primary-steps-before');
-const primaryStepsAfterInput = document.getElementById('primary-steps-after');
-if (primaryStepsBeforeInput) {
-  primaryStepsBeforeInput.addEventListener('input', () => {
+const primarySliderBefore = document.getElementById('primary-slider-before');
+const primarySliderAfter = document.getElementById('primary-slider-after');
+if (primarySliderBefore) {
+  primarySliderBefore.addEventListener('input', () => {
+    const before = Number.parseInt(primarySliderBefore.value, 10);
+    const after = Number.parseInt(primarySliderAfter?.value, 10) || 6;
+    document.querySelector('#primary-settings .slider-input-group:nth-child(1) .slider-value').textContent = before;
+    
     const pCurve = document.getElementById('primary-easing-curve-type');
     const pEase = document.getElementById('primary-easing-easing-type');
-    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut', before, after);
     renderPreviewStrip('primary-preview-strip', colors);
   });
 }
-if (primaryStepsAfterInput) {
-  primaryStepsAfterInput.addEventListener('input', () => {
+if (primarySliderAfter) {
+  primarySliderAfter.addEventListener('input', () => {
+    const before = Number.parseInt(primarySliderBefore?.value, 10) || 4;
+    const after = Number.parseInt(primarySliderAfter.value, 10);
+    document.querySelector('#primary-settings .slider-input-group:nth-child(2) .slider-value').textContent = after;
+    
     const pCurve = document.getElementById('primary-easing-curve-type');
     const pEase = document.getElementById('primary-easing-easing-type');
-    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut', before, after);
     renderPreviewStrip('primary-preview-strip', colors);
   });
 }

@@ -96,6 +96,28 @@
     "primaryLabel": "Primary",
     "generateHelperText": "Generate tokens to preview the scale."
   },
+  "paletteSettingsModal": {
+    "title": "Palette Generation Settings",
+    "closeAriaLabel": "Close settings",
+    "tabs": {
+      "neutral": "Neutral",
+      "primary": "Primary",
+      "neutralAria": "Neutral palette settings",
+      "primaryAria": "Primary palette settings"
+    },
+    "labels": {
+      "stepsBefore": "Steps before seed",
+      "stepsAfter": "Steps after seed",
+      "curveType": "Curve type",
+      "easingType": "Easing type",
+      "preview": "Palette preview",
+      "stepsUnit": "steps"
+    },
+    "buttons": {
+      "apply": "Apply",
+      "cancel": "Cancel"
+    }
+  },
   "semanticMapping": {
     "label": "Semantic Mapping",
     "helperText": "Override the default semantic token mappings from the palettes above.",

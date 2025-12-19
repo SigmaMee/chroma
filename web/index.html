@@ -228,7 +228,7 @@
                 </button>
               </div>
               
-             <div class="subsection-label">Neutral (10 steps)</div>
+             <div class="subsection-label">Neutral</div>
               <div class="scale-grid" id="scale-grid">
                 <div class="empty-state">
                   <ion-icon name="color-palette-outline"></ion-icon>
@@ -239,7 +239,7 @@
               
 
               
-              <div class="subsection-label">Primary (10 steps)</div>
+              <div class="subsection-label">Primary</div>
               <div class="scale-grid" id="primary-grid">
                 <div class="empty-state">
                   <ion-icon name="brush-outline"></ion-icon>
@@ -394,18 +394,20 @@
             <!-- Neutral Palette Settings -->
             <div id="neutral-settings" class="modal-tab-content active">
               <div class="modal-control-group">
-                <label class="modal-control-label">Steps before seed</label>
-                <div class="modal-control-input">
-                  <input type="number" id="neutral-steps-before" class="number-input" min="2" max="16" value="4" />
-                  <span class="input-unit">steps</span>
-                </div>
-              </div>
-              
-              <div class="modal-control-group">
-                <label class="modal-control-label">Steps after seed</label>
-                <div class="modal-control-input">
-                  <input type="number" id="neutral-steps-after" class="number-input" min="2" max="16" value="5" />
-                  <span class="input-unit">steps</span>
+                <label class="modal-control-label">Scale range</label>
+                <div class="slider-container">
+                  <div class="slider-inputs">
+                    <div class="slider-input-group">
+                      <label>Lighter</label>
+                      <input type="range" id="neutral-slider-before" class="slider-input" min="2" max="5" value="5" dir="rtl" />
+                      <span class="slider-value">5</span>
+                    </div>
+                    <div class="slider-input-group">
+                      <label>Darker</label>
+                      <input type="range" id="neutral-slider-after" class="slider-input" min="2" max="6" value="6" />
+                      <span class="slider-value">6</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <!-- Easing controls for neutral -->
@@ -436,18 +438,20 @@
             <!-- Primary Palette Settings -->
             <div id="primary-settings" class="modal-tab-content">
               <div class="modal-control-group">
-                <label class="modal-control-label">Steps before seed</label>
-                <div class="modal-control-input">
-                  <input type="number" id="primary-steps-before" class="number-input" min="2" max="16" value="4" />
-                  <span class="input-unit">steps</span>
-                </div>
-              </div>
-              
-              <div class="modal-control-group">
-                <label class="modal-control-label">Steps after seed</label>
-                <div class="modal-control-input">
-                  <input type="number" id="primary-steps-after" class="number-input" min="2" max="16" value="6" />
-                  <span class="input-unit">steps</span>
+                <label class="modal-control-label">Scale range</label>
+                <div class="slider-container">
+                  <div class="slider-inputs">
+                    <div class="slider-input-group">
+                      <label>Lighter</label>
+                      <input type="range" id="primary-slider-before" class="slider-input" min="2" max="5" value="5" dir="rtl" />
+                      <span class="slider-value">5</span>
+                    </div>
+                    <div class="slider-input-group">
+                      <label>Darker</label>
+                      <input type="range" id="primary-slider-after" class="slider-input" min="2" max="6" value="6" />
+                      <span class="slider-value">6</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               <!-- Easing controls for primary -->

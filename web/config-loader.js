@@ -168,6 +168,64 @@ function applyConfig(config) {
     }
   }
 
+  // Palette settings modal labels
+  if (config.paletteSettingsModal) {
+    const modalTitle = document.querySelector('#palette-settings-modal .modal-header h2');
+    if (modalTitle) modalTitle.textContent = config.paletteSettingsModal.title;
+
+    const closeBtn = document.getElementById('modal-close-btn');
+    if (closeBtn && config.paletteSettingsModal.closeAriaLabel) {
+      closeBtn.setAttribute('aria-label', config.paletteSettingsModal.closeAriaLabel);
+    }
+
+    const neutralTabBtn = document.querySelector('.modal-tab-btn[data-tab="neutral-settings"]');
+    const primaryTabBtn = document.querySelector('.modal-tab-btn[data-tab="primary-settings"]');
+    if (neutralTabBtn && config.paletteSettingsModal.tabs) {
+      neutralTabBtn.textContent = config.paletteSettingsModal.tabs.neutral;
+      if (config.paletteSettingsModal.tabs.neutralAria) {
+        neutralTabBtn.setAttribute('aria-label', config.paletteSettingsModal.tabs.neutralAria);
+      }
+    }
+    if (primaryTabBtn && config.paletteSettingsModal.tabs) {
+      primaryTabBtn.textContent = config.paletteSettingsModal.tabs.primary;
+      if (config.paletteSettingsModal.tabs.primaryAria) {
+        primaryTabBtn.setAttribute('aria-label', config.paletteSettingsModal.tabs.primaryAria);
+      }
+    }
+
+    const neutralLabels = document.querySelectorAll('#neutral-settings .modal-control-label');
+    if (neutralLabels.length >= 5 && config.paletteSettingsModal.labels) {
+      neutralLabels[0].textContent = config.paletteSettingsModal.labels.stepsBefore;
+      neutralLabels[1].textContent = config.paletteSettingsModal.labels.stepsAfter;
+      neutralLabels[2].textContent = config.paletteSettingsModal.labels.curveType;
+      neutralLabels[3].textContent = config.paletteSettingsModal.labels.easingType;
+      neutralLabels[4].textContent = config.paletteSettingsModal.labels.preview;
+    }
+
+    const primaryLabels = document.querySelectorAll('#primary-settings .modal-control-label');
+    if (primaryLabels.length >= 5 && config.paletteSettingsModal.labels) {
+      primaryLabels[0].textContent = config.paletteSettingsModal.labels.stepsBefore;
+      primaryLabels[1].textContent = config.paletteSettingsModal.labels.stepsAfter;
+      primaryLabels[2].textContent = config.paletteSettingsModal.labels.curveType;
+      primaryLabels[3].textContent = config.paletteSettingsModal.labels.easingType;
+      primaryLabels[4].textContent = config.paletteSettingsModal.labels.preview;
+    }
+
+    const neutralUnits = document.querySelectorAll('#neutral-settings .input-unit');
+    const primaryUnits = document.querySelectorAll('#primary-settings .input-unit');
+    if (config.paletteSettingsModal.labels?.stepsUnit) {
+      neutralUnits.forEach((unit) => unit.textContent = config.paletteSettingsModal.labels.stepsUnit);
+      primaryUnits.forEach((unit) => unit.textContent = config.paletteSettingsModal.labels.stepsUnit);
+    }
+
+    if (config.paletteSettingsModal.buttons) {
+      const applyBtn = document.getElementById('modal-apply-btn');
+      const cancelBtn = document.getElementById('modal-cancel-btn');
+      if (applyBtn) applyBtn.textContent = config.paletteSettingsModal.buttons.apply;
+      if (cancelBtn) cancelBtn.textContent = config.paletteSettingsModal.buttons.cancel;
+    }
+  }
+
   // Semantic Mapping
   if (config.semanticMapping) {
     const semanticSection = document.querySelector('#semantic-mapping-container').parentElement;
