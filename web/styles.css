@@ -1628,6 +1628,23 @@ button:not(:disabled):active {
   color: var(--text);
 }
 
+/* Palette preview strip */
+.palette-preview-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--panel);
+  height: 48px;
+}
+
+.palette-preview-cell {
+  height: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

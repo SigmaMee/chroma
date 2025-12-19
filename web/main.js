@@ -723,108 +723,114 @@ function getEasingFunction(curveType, easingType) {
   return easingMap[curveType]?.[easingType] || ((t) => t);
 }
 
-function drawEasingCurve(canvas, curveType, easingType, colors) {
-  if (!canvas) return;
-  
-  const ctx = canvas.getContext('2d');
-  const width = canvas.width;
-  const height = canvas.height;
-  const padding = 10;
-  const graphWidth = width - 2 * padding;
-  const graphHeight = height - 2 * padding;
-  
-  // Clear canvas
-  ctx.fillStyle = 'transparent';
-  ctx.fillRect(0, 0, width, height);
-  
-  // Get easing function
-  const easeFn = getEasingFunction(curveType, easingType);
-  
-  // Draw grid
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 0.5;
-  
-  // Vertical grid lines
-  for (let i = 0; i <= 4; i++) {
-    const x = padding + (i / 4) * graphWidth;
-    ctx.beginPath();
-    ctx.moveTo(x, padding);
-    ctx.lineTo(x, height - padding);
-    ctx.stroke();
-  }
-  
-  // Horizontal grid lines
-  for (let i = 0; i <= 4; i++) {
-    const y = height - padding - (i / 4) * graphHeight;
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
-    ctx.stroke();
-  }
-  
-  // Draw axes
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padding, height - padding);
-  ctx.lineTo(width - padding, height - padding);
-  ctx.stroke();
-  
-  ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, height - padding);
-  ctx.stroke();
-  
-  // Draw easing curve
-  ctx.strokeStyle = '#5a7dff';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  
-  const steps = 200;
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const y = easeFn(t);
-    
-    const x = padding + t * graphWidth;
-    const py = height - padding - y * graphHeight;
-    
-    if (i === 0) {
-      ctx.moveTo(x, py);
-    } else {
-      ctx.lineTo(x, py);
-    }
-  }
-  
-  ctx.stroke();
-  
-  // Draw diagonal reference line
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath();
-  ctx.moveTo(padding, height - padding);
-  ctx.lineTo(width - padding, padding);
-  ctx.stroke();
-  ctx.setLineDash([]);
+// Render a palette preview strip using DOM cells
+function renderPreviewStrip(containerId, colors) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  const arr = Array.isArray(colors) ? colors : [];
+  arr.forEach((hex) => {
+    const cell = document.createElement('div');
+    cell.className = 'palette-preview-cell';
+    cell.style.background = hex;
+    el.appendChild(cell);
+  });
+}
 
-  // Plot palette colors as points along the curve
-  if (Array.isArray(colors) && colors.length > 0) {
-    const n = colors.length;
-    for (let i = 0; i < n; i++) {
-      const t = n === 1 ? 0 : i / (n - 1);
-      const y = easeFn(t);
-      const x = padding + t * graphWidth;
-      const py = height - padding - y * graphHeight;
-      // Draw point
-      ctx.beginPath();
-      ctx.fillStyle = colors[i];
-      ctx.arc(x, py, 4, 0, Math.PI * 2);
-      ctx.fill();
-      // Outline for visibility
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      ctx.stroke();
+// Build eased preview colors for neutral palette
+function buildNeutralPreviewColors(curveType, easingType) {
+  try {
+    const derived = updateDerivedPreview();
+    if (!derived || !derived.hsl) return currentNeutralScale.map(e => e.hex);
+    const easeFn = getEasingFunction(curveType, easingType);
+    const { hsl, saturation } = derived;
+    const lighterSteps = paletteSettings.neutral.stepsBefore;
+    const darkerSteps = paletteSettings.neutral.stepsAfter;
+    const colors = [];
+    // lighter side (from near-seed to lightest)
+    const lighten = [];
+    for (let i = 1; i <= lighterSteps; i++) {
+      const t = i / (lighterSteps + 1);
+      const et = easeFn(t);
+      const lightness = clamp(hsl.l + (1 - hsl.l) * et, 0, 1);
+      const rgb = hslToRgb(hsl.h, saturation, lightness);
+      lighten.push(rgbToHex(rgb.r, rgb.g, rgb.b));
     }
+    // seed
+    lighten.sort((a, b) => {
+      const la = rgbToHsl(...Object.values(hexToRgb(a))).l;
+      const lb = rgbToHsl(...Object.values(hexToRgb(b))).l;
+      return lb - la;
+    });
+    colors.push(...lighten);
+    colors.push(derived.hex);
+    // darker side
+    const darken = [];
+    for (let i = 1; i <= darkerSteps; i++) {
+      const t = i / (darkerSteps + 1);
+      const et = easeFn(t);
+      const lightness = clamp(hsl.l - hsl.l * et, 0, 1);
+      const rgb = hslToRgb(hsl.h, saturation, lightness);
+      darken.push(rgbToHex(rgb.r, rgb.g, rgb.b));
+    }
+    darken.sort((a, b) => {
+      const la = rgbToHsl(...Object.values(hexToRgb(a))).l;
+      const lb = rgbToHsl(...Object.values(hexToRgb(b))).l;
+      return lb - la;
+    });
+    colors.push(...darken);
+    // Trim to requested total
+    const total = lighterSteps + darkerSteps + 1;
+    return colors.slice(0, total);
+  } catch (e) {
+    return currentNeutralScale.map(e => e.hex);
+  }
+}
+
+// Build eased preview colors for primary palette
+function buildPrimaryPreviewColors(curveType, easingType) {
+  try {
+    const primaryHex = normalizeHex(primaryInput && primaryInput.value ? primaryInput.value : "");
+    const prgb = primaryHex ? hexToRgb(primaryHex) : null;
+    if (!prgb) return currentPrimaryScale.map(e => e.hex);
+    const hsl = rgbToHsl(prgb.r, prgb.g, prgb.b);
+    const easeFn = getEasingFunction(curveType, easingType);
+    const lighterSteps = paletteSettings.primary.stepsBefore;
+    const darkerSteps = paletteSettings.primary.stepsAfter;
+    const colors = [];
+    const lighten = [];
+    for (let i = 1; i <= lighterSteps; i++) {
+      const t = i / (lighterSteps + 1);
+      const et = easeFn(t);
+      const lightness = clamp(hsl.l + (1 - hsl.l) * et, 0, 1);
+      const rgb = hslToRgb(hsl.h, hsl.s, lightness);
+      lighten.push(rgbToHex(rgb.r, rgb.g, rgb.b));
+    }
+    lighten.sort((a, b) => {
+      const la = rgbToHsl(...Object.values(hexToRgb(a))).l;
+      const lb = rgbToHsl(...Object.values(hexToRgb(b))).l;
+      return lb - la;
+    });
+    colors.push(...lighten);
+    colors.push(primaryHex);
+    const darken = [];
+    for (let i = 1; i <= darkerSteps; i++) {
+      const t = i / (darkerSteps + 1);
+      const et = easeFn(t);
+      const lightness = clamp(hsl.l - hsl.l * et, 0, 1);
+      const rgb = hslToRgb(hsl.h, hsl.s, lightness);
+      darken.push(rgbToHex(rgb.r, rgb.g, rgb.b));
+    }
+    darken.sort((a, b) => {
+      const la = rgbToHsl(...Object.values(hexToRgb(a))).l;
+      const lb = rgbToHsl(...Object.values(hexToRgb(b))).l;
+      return lb - la;
+    });
+    colors.push(...darken);
+    const total = lighterSteps + darkerSteps + 1;
+    return colors.slice(0, total);
+  } catch (e) {
+    return currentPrimaryScale.map(e => e.hex);
   }
 }
 
@@ -3043,22 +3049,10 @@ if (paletteSettingsBtn) {
       if (pCurve) pCurve.value = paletteSettings.primary.easing.curveType;
       if (pEase) pEase.value = paletteSettings.primary.easing.easingType;
 
-      const nCanvas = document.getElementById('neutral-easing-curve-canvas');
-      const pCanvas = document.getElementById('primary-easing-curve-canvas');
-      const neutralColors = currentNeutralScale.map(e => e.hex);
-      const primaryColors = currentPrimaryScale.map(e => e.hex);
-      drawEasingCurve(
-        nCanvas,
-        (nCurve && nCurve.value) || 'cubic',
-        (nEase && nEase.value) || 'inOut',
-        neutralColors
-      );
-      drawEasingCurve(
-        pCanvas,
-        (pCurve && pCurve.value) || 'cubic',
-        (pEase && pEase.value) || 'inOut',
-        primaryColors
-      );
+      const neutralColors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+      const primaryColors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+      renderPreviewStrip('neutral-preview-strip', neutralColors);
+      renderPreviewStrip('primary-preview-strip', primaryColors);
     }, 0);
   });
 }
@@ -3144,18 +3138,18 @@ modalTabBtns.forEach((btn) => {
     // Add active class to clicked tab and corresponding content
     btn.classList.add('active');
     document.getElementById(tabName).classList.add('active');
-    // Draw the appropriate curve when switching
+    // Draw the appropriate preview when switching
     setTimeout(() => {
       if (tabName === 'neutral-settings') {
-        const nCanvas = document.getElementById('neutral-easing-curve-canvas');
         const nCurve = document.getElementById('neutral-easing-curve-type');
         const nEase = document.getElementById('neutral-easing-easing-type');
-        drawEasingCurve(nCanvas, nCurve?.value || 'cubic', nEase?.value || 'inOut', currentNeutralScale.map(e => e.hex));
+        const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+        renderPreviewStrip('neutral-preview-strip', colors);
       } else if (tabName === 'primary-settings') {
-        const pCanvas = document.getElementById('primary-easing-curve-canvas');
         const pCurve = document.getElementById('primary-easing-curve-type');
         const pEase = document.getElementById('primary-easing-easing-type');
-        drawEasingCurve(pCanvas, pCurve?.value || 'cubic', pEase?.value || 'inOut', currentPrimaryScale.map(e => e.hex));
+        const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+        renderPreviewStrip('primary-preview-strip', colors);
       }
     }, 0);
   });
@@ -3166,14 +3160,14 @@ const nCurveTypeSelect = document.getElementById('neutral-easing-curve-type');
 const nEasingTypeSelect = document.getElementById('neutral-easing-easing-type');
 if (nCurveTypeSelect) {
   nCurveTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('neutral-easing-curve-canvas');
-    drawEasingCurve(canvas, nCurveTypeSelect.value, nEasingTypeSelect?.value || 'inOut', currentNeutralScale.map(e => e.hex));
+    const colors = buildNeutralPreviewColors(nCurveTypeSelect.value, nEasingTypeSelect?.value || 'inOut');
+    renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
 if (nEasingTypeSelect) {
   nEasingTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('neutral-easing-curve-canvas');
-    drawEasingCurve(canvas, nCurveTypeSelect?.value || 'cubic', nEasingTypeSelect.value, currentNeutralScale.map(e => e.hex));
+    const colors = buildNeutralPreviewColors(nCurveTypeSelect?.value || 'cubic', nEasingTypeSelect.value);
+    renderPreviewStrip('neutral-preview-strip', colors);
   });
 }
 
@@ -3182,14 +3176,53 @@ const pCurveTypeSelect = document.getElementById('primary-easing-curve-type');
 const pEasingTypeSelect = document.getElementById('primary-easing-easing-type');
 if (pCurveTypeSelect) {
   pCurveTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('primary-easing-curve-canvas');
-    drawEasingCurve(canvas, pCurveTypeSelect.value, pEasingTypeSelect?.value || 'inOut', currentPrimaryScale.map(e => e.hex));
+    const colors = buildPrimaryPreviewColors(pCurveTypeSelect.value, pEasingTypeSelect?.value || 'inOut');
+    renderPreviewStrip('primary-preview-strip', colors);
   });
 }
 if (pEasingTypeSelect) {
   pEasingTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('primary-easing-curve-canvas');
-    drawEasingCurve(canvas, pCurveTypeSelect?.value || 'cubic', pEasingTypeSelect.value, currentPrimaryScale.map(e => e.hex));
+    const colors = buildPrimaryPreviewColors(pCurveTypeSelect?.value || 'cubic', pEasingTypeSelect.value);
+    renderPreviewStrip('primary-preview-strip', colors);
+  });
+}
+
+// Update preview when step numbers change (live feedback)
+const neutralStepsBeforeInput = document.getElementById('neutral-steps-before');
+const neutralStepsAfterInput = document.getElementById('neutral-steps-after');
+if (neutralStepsBeforeInput) {
+  neutralStepsBeforeInput.addEventListener('input', () => {
+    const nCurve = document.getElementById('neutral-easing-curve-type');
+    const nEase = document.getElementById('neutral-easing-easing-type');
+    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+    renderPreviewStrip('neutral-preview-strip', colors);
+  });
+}
+if (neutralStepsAfterInput) {
+  neutralStepsAfterInput.addEventListener('input', () => {
+    const nCurve = document.getElementById('neutral-easing-curve-type');
+    const nEase = document.getElementById('neutral-easing-easing-type');
+    const colors = buildNeutralPreviewColors(nCurve?.value || 'cubic', nEase?.value || 'inOut');
+    renderPreviewStrip('neutral-preview-strip', colors);
+  });
+}
+
+const primaryStepsBeforeInput = document.getElementById('primary-steps-before');
+const primaryStepsAfterInput = document.getElementById('primary-steps-after');
+if (primaryStepsBeforeInput) {
+  primaryStepsBeforeInput.addEventListener('input', () => {
+    const pCurve = document.getElementById('primary-easing-curve-type');
+    const pEase = document.getElementById('primary-easing-easing-type');
+    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+    renderPreviewStrip('primary-preview-strip', colors);
+  });
+}
+if (primaryStepsAfterInput) {
+  primaryStepsAfterInput.addEventListener('input', () => {
+    const pCurve = document.getElementById('primary-easing-curve-type');
+    const pEase = document.getElementById('primary-easing-easing-type');
+    const colors = buildPrimaryPreviewColors(pCurve?.value || 'cubic', pEase?.value || 'inOut');
+    renderPreviewStrip('primary-preview-strip', colors);
   });
 }
 
