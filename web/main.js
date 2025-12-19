@@ -1487,8 +1487,6 @@ function updateDerivedPreview() {
 
 function updateHarmonySwatches() {
   const primaryColor = primaryInput.value;
-  // Use the actual saturation from the user's tint selection, not a hardcoded preview value
-  const saturation = satInput ? Number(satInput.value) : 14;
   
   // Define all harmony modes and their hue shifts
   const modes = [
@@ -1508,13 +1506,14 @@ function updateHarmonySwatches() {
         const rgb = hexToRgb(normalized);
         if (rgb) {
           let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+          // Apply hue shift but keep original S and L from the seed color
           hsl = { ...hsl, h: (hsl.h + shift + 360) % 360 };
-          const sat = clamp(saturation / 100, 0, 0.3);
-          const derivedRgb = hslToRgb(hsl.h, sat, hsl.l);
-          const derivedHex = rgbToHex(derivedRgb.r, derivedRgb.g, derivedRgb.b);
+          // Use the seed's original saturation and lightness, not clamped
+          const swatchRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+          const swatchHex = rgbToHex(swatchRgb.r, swatchRgb.g, swatchRgb.b);
           const swatchColor = swatch.querySelector('.swatch-color');
           if (swatchColor) {
-            swatchColor.style.background = derivedHex;
+            swatchColor.style.background = swatchHex;
           }
         }
       }
