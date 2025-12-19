@@ -388,9 +388,6 @@
             <button class="modal-tab-btn" data-tab="primary-settings" aria-label="Primary palette settings">
               Primary
             </button>
-            <button class="modal-tab-btn" data-tab="easing-settings" aria-label="Easing curve settings">
-              Easing
-            </button>
           </div>
           
           <div class="modal-body">
@@ -411,6 +408,29 @@
                   <span class="input-unit">steps</span>
                 </div>
               </div>
+              <!-- Easing controls for neutral -->
+              <div class="modal-control-group">
+                <label class="modal-control-label">Curve type</label>
+                <select id="neutral-easing-curve-type" class="select-input">
+                  <option value="linear">Linear</option>
+                  <option value="quadratic">Quadratic</option>
+                  <option value="cubic" selected>Cubic</option>
+                  <option value="quartic">Quartic</option>
+                  <option value="quintic">Quintic</option>
+                </select>
+              </div>
+              <div class="modal-control-group">
+                <label class="modal-control-label">Easing type</label>
+                <select id="neutral-easing-easing-type" class="select-input">
+                  <option value="in">In (accelerating)</option>
+                  <option value="out">Out (decelerating)</option>
+                  <option value="inOut" selected>In-Out (smooth)</option>
+                </select>
+              </div>
+              <div class="modal-control-group">
+                <label class="modal-control-label">Curve preview</label>
+                <canvas id="neutral-easing-curve-canvas" width="280" height="150" style="border: 1px solid var(--border); border-radius: 4px; background: var(--surface-variant); width: 100%; display: block;"></canvas>
+              </div>
             </div>
             
             <!-- Primary Palette Settings -->
@@ -430,13 +450,10 @@
                   <span class="input-unit">steps</span>
                 </div>
               </div>
-            </div>
-
-            <!-- Easing Settings -->
-            <div id="easing-settings" class="modal-tab-content">
+              <!-- Easing controls for primary -->
               <div class="modal-control-group">
                 <label class="modal-control-label">Curve type</label>
-                <select id="easing-curve-type" class="select-input">
+                <select id="primary-easing-curve-type" class="select-input">
                   <option value="linear">Linear</option>
                   <option value="quadratic">Quadratic</option>
                   <option value="cubic" selected>Cubic</option>
@@ -444,19 +461,17 @@
                   <option value="quintic">Quintic</option>
                 </select>
               </div>
-              
               <div class="modal-control-group">
                 <label class="modal-control-label">Easing type</label>
-                <select id="easing-easing-type" class="select-input">
+                <select id="primary-easing-easing-type" class="select-input">
                   <option value="in">In (accelerating)</option>
                   <option value="out">Out (decelerating)</option>
                   <option value="inOut" selected>In-Out (smooth)</option>
                 </select>
               </div>
-
               <div class="modal-control-group">
                 <label class="modal-control-label">Curve preview</label>
-                <canvas id="easing-curve-canvas" width="280" height="150" style="border: 1px solid var(--border-color); border-radius: 4px; background: var(--surface-variant); width: 100%; display: block;"></canvas>
+                <canvas id="primary-easing-curve-canvas" width="280" height="150" style="border: 1px solid var(--border); border-radius: 4px; background: var(--surface-variant); width: 100%; display: block;"></canvas>
               </div>
             </div>
           </div>

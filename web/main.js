@@ -339,20 +339,27 @@ let currentTintColorMode = "primary";
 const semanticOverrides = {};
 let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
+// Track latest generated scales for graph previews
+let currentNeutralScale = [];
+let currentPrimaryScale = [];
 
 // Palette generation settings
 let paletteSettings = {
   neutral: {
     stepsBefore: 4,
-    stepsAfter: 5
+    stepsAfter: 5,
+    easing: {
+      curveType: 'cubic',
+      easingType: 'inOut'
+    }
   },
   primary: {
     stepsBefore: 4,
-    stepsAfter: 6
-  },
-  easing: {
-    curveType: 'cubic',  // linear, quadratic, cubic, quartic, quintic
-    easingType: 'inOut'  // in, out, inOut
+    stepsAfter: 6,
+    easing: {
+      curveType: 'cubic',
+      easingType: 'inOut'
+    }
   }
 };
 
@@ -716,7 +723,7 @@ function getEasingFunction(curveType, easingType) {
   return easingMap[curveType]?.[easingType] || ((t) => t);
 }
 
-function drawEasingCurve(canvas, curveType, easingType) {
+function drawEasingCurve(canvas, curveType, easingType, colors) {
   if (!canvas) return;
   
   const ctx = canvas.getContext('2d');
@@ -799,6 +806,26 @@ function drawEasingCurve(canvas, curveType, easingType) {
   ctx.lineTo(width - padding, padding);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Plot palette colors as points along the curve
+  if (Array.isArray(colors) && colors.length > 0) {
+    const n = colors.length;
+    for (let i = 0; i < n; i++) {
+      const t = n === 1 ? 0 : i / (n - 1);
+      const y = easeFn(t);
+      const x = padding + t * graphWidth;
+      const py = height - padding - y * graphHeight;
+      // Draw point
+      ctx.beginPath();
+      ctx.fillStyle = colors[i];
+      ctx.arc(x, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+      // Outline for visibility
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.stroke();
+    }
+  }
 }
 
 function relativeLuminance(rgb) {
@@ -2635,6 +2662,9 @@ function generateTokens() {
 
       // Generate semantic tokens from neutral scale FIRST
       const neutralScale = scale.filter((item) => item.name.includes("greyscale.scale"));
+      // Store for easing graph previews
+      currentNeutralScale = neutralScale.slice();
+      currentPrimaryScale = Array.isArray(primaryScale) ? primaryScale.slice() : [];
       let semantic = null;
       if (neutralScale.length > 0) {
         const complianceMode = complianceLevel ? complianceLevel.value : "AA";
@@ -3002,12 +3032,33 @@ const modalTabContents = document.querySelectorAll('.modal-tab-content');
 if (paletteSettingsBtn) {
   paletteSettingsBtn.addEventListener('click', () => {
     paletteSettingsModal.classList.remove('hidden');
-    // Draw the easing curve when modal opens
+    // Sync select values with current settings and draw curves
     setTimeout(() => {
-      const canvas = document.getElementById('easing-curve-canvas');
-      const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
-      const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
-      drawEasingCurve(canvas, curveType, easingType);
+      const nCurve = document.getElementById('neutral-easing-curve-type');
+      const nEase = document.getElementById('neutral-easing-easing-type');
+      const pCurve = document.getElementById('primary-easing-curve-type');
+      const pEase = document.getElementById('primary-easing-easing-type');
+      if (nCurve) nCurve.value = paletteSettings.neutral.easing.curveType;
+      if (nEase) nEase.value = paletteSettings.neutral.easing.easingType;
+      if (pCurve) pCurve.value = paletteSettings.primary.easing.curveType;
+      if (pEase) pEase.value = paletteSettings.primary.easing.easingType;
+
+      const nCanvas = document.getElementById('neutral-easing-curve-canvas');
+      const pCanvas = document.getElementById('primary-easing-curve-canvas');
+      const neutralColors = currentNeutralScale.map(e => e.hex);
+      const primaryColors = currentPrimaryScale.map(e => e.hex);
+      drawEasingCurve(
+        nCanvas,
+        (nCurve && nCurve.value) || 'cubic',
+        (nEase && nEase.value) || 'inOut',
+        neutralColors
+      );
+      drawEasingCurve(
+        pCanvas,
+        (pCurve && pCurve.value) || 'cubic',
+        (pEase && pEase.value) || 'inOut',
+        primaryColors
+      );
     }, 0);
   });
 }
@@ -3060,11 +3111,15 @@ if (modalApplyBtn) {
     paletteSettings.primary.stepsBefore = primaryStepsBefore;
     paletteSettings.primary.stepsAfter = primaryStepsAfter;
     
-    // Read easing settings
-    const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
-    const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
-    paletteSettings.easing.curveType = curveType;
-    paletteSettings.easing.easingType = easingType;
+    // Read per-palette easing settings
+    const nCurveVal = document.getElementById('neutral-easing-curve-type')?.value || 'cubic';
+    const nEaseVal = document.getElementById('neutral-easing-easing-type')?.value || 'inOut';
+    const pCurveVal = document.getElementById('primary-easing-curve-type')?.value || 'cubic';
+    const pEaseVal = document.getElementById('primary-easing-easing-type')?.value || 'inOut';
+    paletteSettings.neutral.easing.curveType = nCurveVal;
+    paletteSettings.neutral.easing.easingType = nEaseVal;
+    paletteSettings.primary.easing.curveType = pCurveVal;
+    paletteSettings.primary.easing.easingType = pEaseVal;
     
     console.log('Applied palette settings:', paletteSettings);
     
@@ -3083,46 +3138,58 @@ if (modalOverlay) {
 modalTabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     const tabName = btn.dataset.tab;
-    
     // Remove active class from all tabs and contents
     modalTabBtns.forEach((b) => b.classList.remove('active'));
     modalTabContents.forEach((content) => content.classList.remove('active'));
-    
     // Add active class to clicked tab and corresponding content
     btn.classList.add('active');
     document.getElementById(tabName).classList.add('active');
-    
-    // If switching to easing tab, draw the curve
-    if (tabName === 'easing-settings') {
-      setTimeout(() => {
-        const canvas = document.getElementById('easing-curve-canvas');
-        const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
-        const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
-        drawEasingCurve(canvas, curveType, easingType);
-      }, 0);
-    }
+    // Draw the appropriate curve when switching
+    setTimeout(() => {
+      if (tabName === 'neutral-settings') {
+        const nCanvas = document.getElementById('neutral-easing-curve-canvas');
+        const nCurve = document.getElementById('neutral-easing-curve-type');
+        const nEase = document.getElementById('neutral-easing-easing-type');
+        drawEasingCurve(nCanvas, nCurve?.value || 'cubic', nEase?.value || 'inOut', currentNeutralScale.map(e => e.hex));
+      } else if (tabName === 'primary-settings') {
+        const pCanvas = document.getElementById('primary-easing-curve-canvas');
+        const pCurve = document.getElementById('primary-easing-curve-type');
+        const pEase = document.getElementById('primary-easing-easing-type');
+        drawEasingCurve(pCanvas, pCurve?.value || 'cubic', pEase?.value || 'inOut', currentPrimaryScale.map(e => e.hex));
+      }
+    }, 0);
   });
 });
 
-// Easing curve control event listeners
-const curveTypeSelect = document.getElementById('easing-curve-type');
-const easingTypeSelect = document.getElementById('easing-easing-type');
-
-if (curveTypeSelect) {
-  curveTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('easing-curve-canvas');
-    const curveType = curveTypeSelect.value;
-    const easingType = easingTypeSelect?.value || 'inOut';
-    drawEasingCurve(canvas, curveType, easingType);
+// Easing curve control event listeners (neutral)
+const nCurveTypeSelect = document.getElementById('neutral-easing-curve-type');
+const nEasingTypeSelect = document.getElementById('neutral-easing-easing-type');
+if (nCurveTypeSelect) {
+  nCurveTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('neutral-easing-curve-canvas');
+    drawEasingCurve(canvas, nCurveTypeSelect.value, nEasingTypeSelect?.value || 'inOut', currentNeutralScale.map(e => e.hex));
+  });
+}
+if (nEasingTypeSelect) {
+  nEasingTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('neutral-easing-curve-canvas');
+    drawEasingCurve(canvas, nCurveTypeSelect?.value || 'cubic', nEasingTypeSelect.value, currentNeutralScale.map(e => e.hex));
   });
 }
 
-if (easingTypeSelect) {
-  easingTypeSelect.addEventListener('change', () => {
-    const canvas = document.getElementById('easing-curve-canvas');
-    const curveType = curveTypeSelect?.value || 'cubic';
-    const easingType = easingTypeSelect.value;
-    drawEasingCurve(canvas, curveType, easingType);
+// Easing curve control event listeners (primary)
+const pCurveTypeSelect = document.getElementById('primary-easing-curve-type');
+const pEasingTypeSelect = document.getElementById('primary-easing-easing-type');
+if (pCurveTypeSelect) {
+  pCurveTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('primary-easing-curve-canvas');
+    drawEasingCurve(canvas, pCurveTypeSelect.value, pEasingTypeSelect?.value || 'inOut', currentPrimaryScale.map(e => e.hex));
+  });
+}
+if (pEasingTypeSelect) {
+  pEasingTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('primary-easing-curve-canvas');
+    drawEasingCurve(canvas, pCurveTypeSelect?.value || 'cubic', pEasingTypeSelect.value, currentPrimaryScale.map(e => e.hex));
   });
 }
 
