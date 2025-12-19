@@ -15,7 +15,7 @@
     "primaryColorLabel": "Primary colour (hex)",
     "optionsLabel": "Options",
     "harmonyModeLabel": "Transmutation principle",
-    "harmonyModeHelper": "Determines the relationship between primary colour and neutral palettes",
+    "harmonyModeHelper": "Determines the relationship between primary colour and the one used to tint the neutral palettes.",
     "tintAmountLabel": "Tint amount",
     "tintAmountHelper": "",
     "resetButton": "Reset",

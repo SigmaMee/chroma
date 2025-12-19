@@ -2865,6 +2865,46 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Palette Settings Modal
+const paletteSettingsBtn = document.getElementById('palette-settings-btn');
+const paletteSettingsModal = document.getElementById('palette-settings-modal');
+const modalCloseBtn = document.getElementById('modal-close-btn');
+const modalCancelBtn = document.getElementById('modal-cancel-btn');
+const modalApplyBtn = document.getElementById('modal-apply-btn');
+const modalOverlay = document.querySelector('.modal-overlay');
+
+if (paletteSettingsBtn) {
+  paletteSettingsBtn.addEventListener('click', () => {
+    paletteSettingsModal.classList.remove('hidden');
+  });
+}
+
+if (modalCloseBtn) {
+  modalCloseBtn.addEventListener('click', () => {
+    paletteSettingsModal.classList.add('hidden');
+  });
+}
+
+if (modalCancelBtn) {
+  modalCancelBtn.addEventListener('click', () => {
+    paletteSettingsModal.classList.add('hidden');
+  });
+}
+
+if (modalApplyBtn) {
+  modalApplyBtn.addEventListener('click', () => {
+    // Apply settings logic will go here
+    paletteSettingsModal.classList.add('hidden');
+    generateTokens();
+  });
+}
+
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', () => {
+    paletteSettingsModal.classList.add('hidden');
+  });
+}
+
 updateDerivedPreview();
 renderScale();
 renderMatrix();

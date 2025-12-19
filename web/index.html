@@ -221,7 +221,12 @@
 
             <section class="card scale-card">
              
-              <h3 class="section-heading">Palettes</h3>
+              <div class="section-header-with-controls">
+                <h3 class="section-heading">Palettes</h3>
+                <button id="palette-settings-btn" class="palette-settings-btn" aria-label="Palette generation settings">
+                  <ion-icon name="settings-outline"></ion-icon>
+                </button>
+              </div>
               
              <div class="subsection-label">Neutral (10 steps)</div>
               <div class="scale-grid" id="scale-grid">
@@ -360,6 +365,26 @@
                 </section>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Palette Settings Modal -->
+      <div id="palette-settings-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Palette Generation Settings</h2>
+            <button id="modal-close-btn" class="modal-close-btn" aria-label="Close settings">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+          </div>
+          <div class="modal-body">
+            <!-- Easing controls will be added here -->
+          </div>
+          <div class="modal-footer">
+            <button id="modal-apply-btn" class="btn-primary">Apply</button>
+            <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>
           </div>
         </div>
       </div>
