@@ -393,14 +393,40 @@
           <div class="modal-body">
             <!-- Neutral Palette Settings -->
             <div id="neutral-settings" class="modal-tab-content active">
-              <p class="helper">Neutral palette generation controls</p>
-              <!-- Controls will be added here -->
+              <div class="modal-control-group">
+                <label class="modal-control-label">Steps before seed</label>
+                <div class="modal-control-input">
+                  <input type="number" id="neutral-steps-before" class="number-input" min="2" max="16" value="4" />
+                  <span class="input-unit">steps</span>
+                </div>
+              </div>
+              
+              <div class="modal-control-group">
+                <label class="modal-control-label">Steps after seed</label>
+                <div class="modal-control-input">
+                  <input type="number" id="neutral-steps-after" class="number-input" min="2" max="16" value="5" />
+                  <span class="input-unit">steps</span>
+                </div>
+              </div>
             </div>
             
             <!-- Primary Palette Settings -->
             <div id="primary-settings" class="modal-tab-content">
-              <p class="helper">Primary palette generation controls</p>
-              <!-- Controls will be added here -->
+              <div class="modal-control-group">
+                <label class="modal-control-label">Steps before seed</label>
+                <div class="modal-control-input">
+                  <input type="number" id="primary-steps-before" class="number-input" min="2" max="16" value="4" />
+                  <span class="input-unit">steps</span>
+                </div>
+              </div>
+              
+              <div class="modal-control-group">
+                <label class="modal-control-label">Steps after seed</label>
+                <div class="modal-control-input">
+                  <input type="number" id="primary-steps-after" class="number-input" min="2" max="16" value="6" />
+                  <span class="input-unit">steps</span>
+                </div>
+              </div>
             </div>
           </div>
           

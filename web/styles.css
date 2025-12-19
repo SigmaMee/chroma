@@ -1524,6 +1524,47 @@ button:not(:disabled):active {
   overflow-y: auto;
 }
 
+/* Modal Controls */
+.modal-control-group {
+  margin-bottom: 1.5rem;
+}
+
+.modal-control-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.modal-control-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.number-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  width: 100px;
+  transition: all 0.2s ease;
+}
+
+.number-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(90, 125, 255, 0.2);
+}
+
+.input-unit {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
 .modal-footer {
   display: flex;
   gap: 1rem;

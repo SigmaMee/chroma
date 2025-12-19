@@ -340,6 +340,18 @@ const semanticOverrides = {};
 let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
 
+// Palette generation settings
+let paletteSettings = {
+  neutral: {
+    stepsBefore: 4,
+    stepsAfter: 5
+  },
+  primary: {
+    stepsBefore: 4,
+    stepsAfter: 6
+  }
+};
+
 function generateRandomTintAmounts() {
   // Keep a non-zero floor so hue shifts stay visible and avoid rounding to 0
   tintAmounts.low = 5 + Math.random() * 5;    // 5-10%
@@ -554,14 +566,14 @@ function generateGreyscaleScale(data) {
   }
 
   const { hsl, saturation } = data;
-  let lighterSteps = 4;
-  let darkerSteps = 5;
+  let lighterSteps = paletteSettings.neutral.stepsBefore;
+  let darkerSteps = paletteSettings.neutral.stepsAfter;
 
   if (hsl.l > 0.6) {
     lighterSteps = 0;
-    darkerSteps = 9;
+    darkerSteps = lighterSteps + darkerSteps;
   } else if (hsl.l < 0.2) {
-    lighterSteps = 9;
+    lighterSteps = lighterSteps + darkerSteps;
     darkerSteps = 0;
   }
 
@@ -592,20 +604,10 @@ function generateGreyscaleScale(data) {
     .concat([{ hex: data.hex, lightness: hsl.l }])
     .concat(darken.sort((a, b) => b.lightness - a.lightness));
 
-  const scaleLabels = [
-    "50",
-    "100",
-    "200",
-    "300",
-    "500",
-    "600",
-    "700",
-    "800",
-    "900",
-    "950",
-  ];
+  const totalSteps = paletteSettings.neutral.stepsBefore + paletteSettings.neutral.stepsAfter + 1;
+  const scaleLabels = generateScaleLabels(totalSteps);
 
-  return ordered.slice(0, 10).map((entry, index) => ({
+  return ordered.slice(0, totalSteps).map((entry, index) => ({
     name: `greyscale.scale.${scaleLabels[index]}`,
     hex: entry.hex,
     isSeed: entry.hex === data.hex,
@@ -618,15 +620,15 @@ function generatePrimaryScale(data) {
   }
 
   const { hsl } = data;
-  let lighterSteps = 4;
-  let darkerSteps = 5;
+  let lighterSteps = paletteSettings.primary.stepsBefore;
+  let darkerSteps = paletteSettings.primary.stepsAfter;
 
   if (hsl.l > 0.6) {
-    lighterSteps = 2;
-    darkerSteps = 7;
+    lighterSteps = Math.floor((lighterSteps + darkerSteps) * 0.3);
+    darkerSteps = Math.ceil((paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter) * 0.7);
   } else if (hsl.l < 0.2) {
-    lighterSteps = 7;
-    darkerSteps = 2;
+    lighterSteps = Math.ceil((paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter) * 0.7);
+    darkerSteps = Math.floor((lighterSteps + darkerSteps) * 0.3);
   }
 
   const lighten = [];
@@ -656,25 +658,24 @@ function generatePrimaryScale(data) {
     .concat([{ hex: data.hex, lightness: hsl.l }])
     .concat(darken.sort((a, b) => b.lightness - a.lightness));
 
-  const scaleLabels = [
-    "50",
-    "100",
-    "200",
-    "300",
-    "400",
-    "500",
-    "600",
-    "700",
-    "800",
-    "900",
-    "950",
-  ];
+  const totalSteps = paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter + 1;
+  const scaleLabels = generateScaleLabels(totalSteps);
 
-  return ordered.slice(0, 11).map((entry, index) => ({
+  return ordered.slice(0, totalSteps).map((entry, index) => ({
     name: `color.primary.${scaleLabels[index]}`,
     hex: entry.hex,
     isSeed: entry.hex === data.hex,
   }));
+}
+
+// Generate scale labels dynamically based on total steps
+function generateScaleLabels(totalSteps) {
+  const labels = [];
+  for (let i = 0; i < totalSteps; i++) {
+    const value = Math.round((i / (totalSteps - 1)) * 950 + 50);
+    labels.push(value.toString());
+  }
+  return labels;
 }
 
 function relativeLuminance(rgb) {
@@ -2895,7 +2896,20 @@ if (modalCancelBtn) {
 
 if (modalApplyBtn) {
   modalApplyBtn.addEventListener('click', () => {
-    // Apply settings logic will go here
+    // Read and validate settings from inputs
+    const neutralStepsBefore = parseInt(document.getElementById('neutral-steps-before').value) || 4;
+    const neutralStepsAfter = parseInt(document.getElementById('neutral-steps-after').value) || 5;
+    const primaryStepsBefore = parseInt(document.getElementById('primary-steps-before').value) || 4;
+    const primaryStepsAfter = parseInt(document.getElementById('primary-steps-after').value) || 6;
+    
+    // Clamp values to min/max
+    paletteSettings.neutral.stepsBefore = Math.max(2, Math.min(16, neutralStepsBefore));
+    paletteSettings.neutral.stepsAfter = Math.max(2, Math.min(16, neutralStepsAfter));
+    paletteSettings.primary.stepsBefore = Math.max(2, Math.min(16, primaryStepsBefore));
+    paletteSettings.primary.stepsAfter = Math.max(2, Math.min(16, primaryStepsAfter));
+    
+    console.log('Applied palette settings:', paletteSettings);
+    
     paletteSettingsModal.classList.add('hidden');
     generateTokens();
   });
