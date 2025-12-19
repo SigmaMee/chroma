@@ -1565,6 +1565,29 @@ button:not(:disabled):active {
   color: var(--muted);
 }
 
+.select-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(90, 125, 255, 0.2);
+}
+
+.select-input option {
+  background: var(--panel);
+  color: var(--text);
+}
+
 .modal-footer {
   display: flex;
   gap: 1rem;

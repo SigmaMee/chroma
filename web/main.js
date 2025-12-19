@@ -349,6 +349,10 @@ let paletteSettings = {
   primary: {
     stepsBefore: 4,
     stepsAfter: 6
+  },
+  easing: {
+    curveType: 'cubic',  // linear, quadratic, cubic, quartic, quintic
+    easingType: 'inOut'  // in, out, inOut
   }
 };
 
@@ -569,14 +573,6 @@ function generateGreyscaleScale(data) {
   let lighterSteps = paletteSettings.neutral.stepsBefore;
   let darkerSteps = paletteSettings.neutral.stepsAfter;
 
-  if (hsl.l > 0.6) {
-    lighterSteps = 0;
-    darkerSteps = lighterSteps + darkerSteps;
-  } else if (hsl.l < 0.2) {
-    lighterSteps = lighterSteps + darkerSteps;
-    darkerSteps = 0;
-  }
-
   const lighten = [];
   for (let i = 1; i <= lighterSteps; i += 1) {
     const ratio = i / (lighterSteps + 1);
@@ -623,14 +619,6 @@ function generatePrimaryScale(data) {
   let lighterSteps = paletteSettings.primary.stepsBefore;
   let darkerSteps = paletteSettings.primary.stepsAfter;
 
-  if (hsl.l > 0.6) {
-    lighterSteps = Math.floor((lighterSteps + darkerSteps) * 0.3);
-    darkerSteps = Math.ceil((paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter) * 0.7);
-  } else if (hsl.l < 0.2) {
-    lighterSteps = Math.ceil((paletteSettings.primary.stepsBefore + paletteSettings.primary.stepsAfter) * 0.7);
-    darkerSteps = Math.floor((lighterSteps + darkerSteps) * 0.3);
-  }
-
   const lighten = [];
   for (let i = 1; i <= lighterSteps; i += 1) {
     const ratio = i / (lighterSteps + 1);
@@ -670,12 +658,147 @@ function generatePrimaryScale(data) {
 
 // Generate scale labels dynamically based on total steps
 function generateScaleLabels(totalSteps) {
-  const labels = [];
-  for (let i = 0; i < totalSteps; i++) {
-    const value = Math.round((i / (totalSteps - 1)) * 950 + 50);
-    labels.push(value.toString());
-  }
+  // Max 12 predefined scale labels: 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
+  const allLabels = [25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+  
+  // For totalSteps requested, return the first totalSteps labels from the predefined list
+  // This ensures we get nice round numbers and cut from the bottom
+  const labels = allLabels.slice(0, totalSteps).map(l => l.toString());
   return labels;
+}
+
+// Easing function implementations
+function easeInQuadratic(t) { return t * t; }
+function easeOutQuadratic(t) { return 1 - (1 - t) * (1 - t); }
+function easeInOutQuadratic(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+function easeInCubic(t) { return t * t * t; }
+function easeOutCubic(t) { return 1 - (1 - t) ** 3; }
+function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; }
+
+function easeInQuartic(t) { return t * t * t * t; }
+function easeOutQuartic(t) { return 1 - (1 - t) ** 4; }
+function easeInOutQuartic(t) { return t < 0.5 ? 8 * t * t * t * t : 1 - (-2 * t + 2) ** 4 / 2; }
+
+function easeInQuintic(t) { return t * t * t * t * t; }
+function easeOutQuintic(t) { return 1 - (1 - t) ** 5; }
+function easeInOutQuintic(t) { return t < 0.5 ? 16 * t * t * t * t * t : 1 - (-2 * t + 2) ** 5 / 2; }
+
+function getEasingFunction(curveType, easingType) {
+  const easingMap = {
+    linear: {
+      in: t => t,
+      out: t => t,
+      inOut: t => t
+    },
+    quadratic: {
+      in: easeInQuadratic,
+      out: easeOutQuadratic,
+      inOut: easeInOutQuadratic
+    },
+    cubic: {
+      in: easeInCubic,
+      out: easeOutCubic,
+      inOut: easeInOutCubic
+    },
+    quartic: {
+      in: easeInQuartic,
+      out: easeOutQuartic,
+      inOut: easeInOutQuartic
+    },
+    quintic: {
+      in: easeInQuintic,
+      out: easeOutQuintic,
+      inOut: easeInOutQuintic
+    }
+  };
+  
+  return easingMap[curveType]?.[easingType] || ((t) => t);
+}
+
+function drawEasingCurve(canvas, curveType, easingType) {
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  const padding = 10;
+  const graphWidth = width - 2 * padding;
+  const graphHeight = height - 2 * padding;
+  
+  // Clear canvas
+  ctx.fillStyle = 'transparent';
+  ctx.fillRect(0, 0, width, height);
+  
+  // Get easing function
+  const easeFn = getEasingFunction(curveType, easingType);
+  
+  // Draw grid
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 0.5;
+  
+  // Vertical grid lines
+  for (let i = 0; i <= 4; i++) {
+    const x = padding + (i / 4) * graphWidth;
+    ctx.beginPath();
+    ctx.moveTo(x, padding);
+    ctx.lineTo(x, height - padding);
+    ctx.stroke();
+  }
+  
+  // Horizontal grid lines
+  for (let i = 0; i <= 4; i++) {
+    const y = height - padding - (i / 4) * graphHeight;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+  }
+  
+  // Draw axes
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, height - padding);
+  ctx.lineTo(width - padding, height - padding);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, height - padding);
+  ctx.stroke();
+  
+  // Draw easing curve
+  ctx.strokeStyle = '#5a7dff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  
+  const steps = 200;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const y = easeFn(t);
+    
+    const x = padding + t * graphWidth;
+    const py = height - padding - y * graphHeight;
+    
+    if (i === 0) {
+      ctx.moveTo(x, py);
+    } else {
+      ctx.lineTo(x, py);
+    }
+  }
+  
+  ctx.stroke();
+  
+  // Draw diagonal reference line
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(padding, height - padding);
+  ctx.lineTo(width - padding, padding);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function relativeLuminance(rgb) {
@@ -1908,9 +2031,9 @@ function generateSemanticFromNeutral(neutralScale, complianceMode = "AA") {
   // Helper: extract label from name (e.g., "greyscale.scale.950" -> "950")
   function getLabel(item) {
     if (!item || !item.name) return null;
-    // Match longest first: 950, 900, 800, etc. before 50
-    const match = item.name.match(/(950|900|800|700|600|500|300|200|100|50)/);
-    return match ? match[0] : null;
+    // Extract any numeric label from the name (supports dynamic scale labels)
+    const match = item.name.match(/\.(\d+)$/);
+    return match ? match[1] : null;
   }
 
   // Helper: create token reference
@@ -2879,6 +3002,13 @@ const modalTabContents = document.querySelectorAll('.modal-tab-content');
 if (paletteSettingsBtn) {
   paletteSettingsBtn.addEventListener('click', () => {
     paletteSettingsModal.classList.remove('hidden');
+    // Draw the easing curve when modal opens
+    setTimeout(() => {
+      const canvas = document.getElementById('easing-curve-canvas');
+      const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
+      const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
+      drawEasingCurve(canvas, curveType, easingType);
+    }, 0);
   });
 }
 
@@ -2897,16 +3027,44 @@ if (modalCancelBtn) {
 if (modalApplyBtn) {
   modalApplyBtn.addEventListener('click', () => {
     // Read and validate settings from inputs
-    const neutralStepsBefore = parseInt(document.getElementById('neutral-steps-before').value) || 4;
-    const neutralStepsAfter = parseInt(document.getElementById('neutral-steps-after').value) || 5;
-    const primaryStepsBefore = parseInt(document.getElementById('primary-steps-before').value) || 4;
-    const primaryStepsAfter = parseInt(document.getElementById('primary-steps-after').value) || 6;
+    let neutralStepsBefore = parseInt(document.getElementById('neutral-steps-before').value) || 4;
+    let neutralStepsAfter = parseInt(document.getElementById('neutral-steps-after').value) || 5;
+    let primaryStepsBefore = parseInt(document.getElementById('primary-steps-before').value) || 4;
+    let primaryStepsAfter = parseInt(document.getElementById('primary-steps-after').value) || 6;
     
-    // Clamp values to min/max
-    paletteSettings.neutral.stepsBefore = Math.max(2, Math.min(16, neutralStepsBefore));
-    paletteSettings.neutral.stepsAfter = Math.max(2, Math.min(16, neutralStepsAfter));
-    paletteSettings.primary.stepsBefore = Math.max(2, Math.min(16, primaryStepsBefore));
-    paletteSettings.primary.stepsAfter = Math.max(2, Math.min(16, primaryStepsAfter));
+    // Clamp values to min/max, ensuring minimum total steps of 5 for meaningful semantic tokens
+    // (seed requires at least 2 steps before + 2 steps after)
+    neutralStepsBefore = Math.max(1, Math.min(16, neutralStepsBefore));
+    neutralStepsAfter = Math.max(1, Math.min(16, neutralStepsAfter));
+    
+    // Enforce minimum total of 5 steps (4 around seed + 1 seed)
+    const neutralTotal = neutralStepsBefore + neutralStepsAfter + 1;
+    if (neutralTotal < 5) {
+      // Redistribute: if total is less than 5, enforce minimum of 2 on each side
+      neutralStepsBefore = Math.max(neutralStepsBefore, 2);
+      neutralStepsAfter = Math.max(neutralStepsAfter, 2);
+    }
+    
+    primaryStepsBefore = Math.max(1, Math.min(16, primaryStepsBefore));
+    primaryStepsAfter = Math.max(1, Math.min(16, primaryStepsAfter));
+    
+    // Same enforcement for primary
+    const primaryTotal = primaryStepsBefore + primaryStepsAfter + 1;
+    if (primaryTotal < 5) {
+      primaryStepsBefore = Math.max(primaryStepsBefore, 2);
+      primaryStepsAfter = Math.max(primaryStepsAfter, 2);
+    }
+    
+    paletteSettings.neutral.stepsBefore = neutralStepsBefore;
+    paletteSettings.neutral.stepsAfter = neutralStepsAfter;
+    paletteSettings.primary.stepsBefore = primaryStepsBefore;
+    paletteSettings.primary.stepsAfter = primaryStepsAfter;
+    
+    // Read easing settings
+    const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
+    const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
+    paletteSettings.easing.curveType = curveType;
+    paletteSettings.easing.easingType = easingType;
     
     console.log('Applied palette settings:', paletteSettings);
     
@@ -2933,8 +3091,40 @@ modalTabBtns.forEach((btn) => {
     // Add active class to clicked tab and corresponding content
     btn.classList.add('active');
     document.getElementById(tabName).classList.add('active');
+    
+    // If switching to easing tab, draw the curve
+    if (tabName === 'easing-settings') {
+      setTimeout(() => {
+        const canvas = document.getElementById('easing-curve-canvas');
+        const curveType = document.getElementById('easing-curve-type')?.value || 'cubic';
+        const easingType = document.getElementById('easing-easing-type')?.value || 'inOut';
+        drawEasingCurve(canvas, curveType, easingType);
+      }, 0);
+    }
   });
 });
+
+// Easing curve control event listeners
+const curveTypeSelect = document.getElementById('easing-curve-type');
+const easingTypeSelect = document.getElementById('easing-easing-type');
+
+if (curveTypeSelect) {
+  curveTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('easing-curve-canvas');
+    const curveType = curveTypeSelect.value;
+    const easingType = easingTypeSelect?.value || 'inOut';
+    drawEasingCurve(canvas, curveType, easingType);
+  });
+}
+
+if (easingTypeSelect) {
+  easingTypeSelect.addEventListener('change', () => {
+    const canvas = document.getElementById('easing-curve-canvas');
+    const curveType = curveTypeSelect?.value || 'cubic';
+    const easingType = easingTypeSelect.value;
+    drawEasingCurve(canvas, curveType, easingType);
+  });
+}
 
 updateDerivedPreview();
 renderScale();
