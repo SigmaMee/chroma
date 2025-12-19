@@ -379,9 +379,31 @@
               <ion-icon name="close-outline"></ion-icon>
             </button>
           </div>
-          <div class="modal-body">
-            <!-- Easing controls will be added here -->
+          
+          <!-- Modal Tabs -->
+          <div class="modal-tabs">
+            <button class="modal-tab-btn active" data-tab="neutral-settings" aria-label="Neutral palette settings">
+              Neutral
+            </button>
+            <button class="modal-tab-btn" data-tab="primary-settings" aria-label="Primary palette settings">
+              Primary
+            </button>
           </div>
+          
+          <div class="modal-body">
+            <!-- Neutral Palette Settings -->
+            <div id="neutral-settings" class="modal-tab-content active">
+              <p class="helper">Neutral palette generation controls</p>
+              <!-- Controls will be added here -->
+            </div>
+            
+            <!-- Primary Palette Settings -->
+            <div id="primary-settings" class="modal-tab-content">
+              <p class="helper">Primary palette generation controls</p>
+              <!-- Controls will be added here -->
+            </div>
+          </div>
+          
           <div class="modal-footer">
             <button id="modal-apply-btn" class="btn-primary">Apply</button>
             <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>

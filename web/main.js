@@ -2872,6 +2872,8 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 const modalCancelBtn = document.getElementById('modal-cancel-btn');
 const modalApplyBtn = document.getElementById('modal-apply-btn');
 const modalOverlay = document.querySelector('.modal-overlay');
+const modalTabBtns = document.querySelectorAll('.modal-tab-btn');
+const modalTabContents = document.querySelectorAll('.modal-tab-content');
 
 if (paletteSettingsBtn) {
   paletteSettingsBtn.addEventListener('click', () => {
@@ -2904,6 +2906,21 @@ if (modalOverlay) {
     paletteSettingsModal.classList.add('hidden');
   });
 }
+
+// Modal tab switching
+modalTabBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const tabName = btn.dataset.tab;
+    
+    // Remove active class from all tabs and contents
+    modalTabBtns.forEach((b) => b.classList.remove('active'));
+    modalTabContents.forEach((content) => content.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding content
+    btn.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+  });
+});
 
 updateDerivedPreview();
 renderScale();
