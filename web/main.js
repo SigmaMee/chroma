@@ -2019,23 +2019,11 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     let outlineStrongLabel = null;
     
     if (outlineDefaultIndex !== -1) {
-      // Subtle outline: 2-3 steps lighter (lower index) - can be below threshold
-      if (outlineDefaultIndex >= 2) {
-        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 2]);
-      } else if (outlineDefaultIndex >= 1) {
-        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 1]);
-      } else {
-        outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex]);
-      }
+      // Subtle outline: 2 steps lighter (lower index)
+      outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 2]);
       
       // Strong outline: 2 steps darker (higher index)
-      if (outlineDefaultIndex + 2 < primaryScaleEntries.length) {
-        outlineStrongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 2]);
-      } else if (outlineDefaultIndex + 1 < primaryScaleEntries.length) {
-        outlineStrongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 1]);
-      } else {
-        outlineStrongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex]);
-      }
+      outlineStrongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 2]);
     }
     
     if (outlineSubtleLabel) {
@@ -2058,18 +2046,10 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     
     // Surface primary variants: use seed index for subtle/strong calculation
     if (seedIndex !== -1) {
-      // Subtle: prefer three steps lighter (e.g., 500 -> 200)
-      if (seedIndex >= 3) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 3]);
-      } else if (seedIndex >= 2) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 2]);
-      } else if (seedIndex > 0) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 1]);
-      }
-      // Strong: token after seed (darker)
-      if (seedIndex < primaryScaleEntries.length - 1) {
-        strongLabel = getPrimaryLabel(primaryScaleEntries[seedIndex + 1]);
-      }
+      // Subtle: three steps lighter (e.g., 500 -> 200)
+      subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 3]);
+      // Strong: one step darker (e.g., 500 -> 600)
+      strongLabel = getPrimaryLabel(primaryScaleEntries[seedIndex + 1]);
     }
     
     if (subtleLabel) {
