@@ -105,6 +105,91 @@ Manual control over semantic token assignments with live preview:
 - Dynamic viewport height management for optimal layout
 - Ionicons for consistent icon system
 - CSS Grid and Flexbox for responsive layout
+- Taxonomy-driven semantic token generation from `web/token-taxonomy.json`
+
+## Breaking Changes (v1.0.0)
+
+### Taxonomy-Driven Semantic Tokens
+
+As of version 1.0.0, Chroma uses a taxonomy-driven approach for generating semantic tokens. This introduces a **breaking change** to the token output structure.
+
+#### What Changed
+
+**Old Structure (deprecated):**
+```json
+{
+  "color": {
+    "semantic": {
+      "surface": {
+        "neutral": {
+          "surfaceBase": { "$value": "#FFFFFF", "$type": "color" }
+        }
+      }
+    }
+  }
+}
+```
+
+**New Structure:**
+```json
+{
+  "semantic": {
+    "light": {
+      "surface": {
+        "neutral": {
+          "surfaceBase": { "$value": "{color.seed.white}", "$type": "color" }
+        }
+      }
+    },
+    "dark": {
+      "surface": {
+        "neutral": {
+          "surfaceBase": { "$value": "{color.seed.black}", "$type": "color" }
+        }
+      }
+    }
+  }
+}
+```
+
+#### Path Formula
+
+The new taxonomy follows this path structure:
+```
+semantic.{theme}.{tokenType}.{semanticValue}.{tokenName}
+```
+
+**Examples:**
+- `semantic.light.surface.neutral.surfaceBase`
+- `semantic.light.outline.neutral.outlineSubtle`
+- `semantic.light.text.neutral.textPrimary`
+- `semantic.dark.surface.primary.surfacePrimary`
+- `semantic.light.text.primary.textDefault` (text on primary surfaces)
+
+#### Migration Guide
+
+1. **Update Token Paths**: Change all references from `color.semantic.*` to `semantic.{theme}.*`
+2. **Theme Separation**: Light and dark theme tokens are now explicitly separated under `semantic.light` and `semantic.dark`
+3. **Consistent Naming**: Token names follow the pattern `{tokenType}{CapitalizedSubtype}`
+
+**Before:**
+```javascript
+const surfaceColor = tokens.color.semantic.surface.neutral.surfaceBase;
+```
+
+**After:**
+```javascript
+const lightSurface = tokens.semantic.light.surface.neutral.surfaceBase;
+const darkSurface = tokens.semantic.dark.surface.neutral.surfaceBase;
+```
+
+#### Taxonomy Customization
+
+The token structure is defined in `web/token-taxonomy.json`. You can customize:
+- Token types (surface, text, outline)
+- Semantic values (neutral, primary)
+- Subtypes within each semantic value
+- Labels and descriptions
 
 ## Roadmap
 
