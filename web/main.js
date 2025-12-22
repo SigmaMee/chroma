@@ -395,8 +395,8 @@ const matrixNote = document.getElementById("matrix-note");
 const primaryMatrixGrid = document.getElementById("primary-matrix-grid");
 const primaryMatrixPassCount = document.getElementById("primary-matrix-pass-count");
 const primaryMatrixNote = document.getElementById("primary-matrix-note");
-const complianceBtns = document.querySelectorAll(".compliance-btn");
-const getComplianceMode = () => document.querySelector(".compliance-btn.active")?.dataset.level || "AA";
+const complianceBtns = document.querySelectorAll(".compliance-toggle-wrapper .toggle-btn");
+const getComplianceMode = () => document.querySelector(".compliance-toggle-wrapper .toggle-btn.active")?.dataset.level || "AA";
 const output = document.getElementById("output");
 const generateBtn = document.getElementById("generate");
 const copyBtn = document.getElementById("copy");
@@ -3071,7 +3071,7 @@ if (generateBtn) {
 }
 
 // Theme toggle event listeners
-const themeButtons = document.querySelectorAll(".theme-btn");
+const themeButtons = document.querySelectorAll(".toggle-group[role='group'] .toggle-btn");
 themeButtons.forEach((button) => {
   button.addEventListener("click", (event) => {
     // Remove active class and update ARIA for all theme buttons
