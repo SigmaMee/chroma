@@ -2124,8 +2124,17 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
     if (semanticNeutral && semanticNeutral.text && semanticNeutral.text.primary) {
       // Use the hex value directly from the semantic object
       const textPrimaryHex = semanticNeutral.text.primary.hex;
-      const contrastOnPrimary = getContrastRatio(primaryData.hex, textPrimaryHex);
-      
+      // Use the actual surfacePrimary color (baseline) for contrast check
+      let surfacePrimaryHex = null;
+      if (mediumEmphasisLabel) {
+        const surfacePrimaryEntry = primaryScaleEntries.find(e => getPrimaryLabel(e) === mediumEmphasisLabel);
+        if (surfacePrimaryEntry) {
+          surfacePrimaryHex = surfacePrimaryEntry.hex;
+        }
+      }
+      // Fallback to seed if not found
+      if (!surfacePrimaryHex) surfacePrimaryHex = primaryData.hex;
+      const contrastOnPrimary = getContrastRatio(surfacePrimaryHex, textPrimaryHex);
       if (typeof contrastOnPrimary === "number" && contrastOnPrimary >= 4.5) {
         // Use neutral text.primary as textOnPrimary
         root[colorKey].semantic.light.text.primary.textOnPrimary = { $value: semanticOverrides["text.primary.textOnPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
