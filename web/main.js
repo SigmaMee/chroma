@@ -1931,10 +1931,6 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     if (!root[colorKey].semantic.dark.surface.primary) root[colorKey].semantic.dark.surface.primary = {};
     if (!root[colorKey].semantic.dark.outline.primary) root[colorKey].semantic.dark.outline.primary = {};
 
-    // surfacePrimary -> always use seed (same for light and dark)
-    root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-
     // Find the primary seed in the scale and pick adjacent tokens
     const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
     
@@ -2042,6 +2038,11 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     }
     
     // SURFACE PRIMARY - same low/medium/high values
+    if (mediumEmphasisLabel) {
+      root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
+    }
+    
     if (lowEmphasisLabel) {
       root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
       root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
@@ -2103,6 +2104,11 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
         if (inverseHighLabel) {
           root[colorKey].semantic.light.text.primary.textInverseHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
           root[colorKey].semantic.dark.text.primary.textEmphasisHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
+        }
+      }
+    }
+    
+    // textOnPrimary: check contrast between primary surface (medium emphasis = baseline) and textEmphasisHigh from neutral scaleimary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
         }
       }
     }
