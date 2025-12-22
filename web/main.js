@@ -1739,7 +1739,7 @@ function updateHarmonySwatches() {
   });
 }
 
-function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) {
+function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, complianceMode = "AA") {
   const safePrefix = (prefix || "")
     .trim()
     .toLowerCase()
@@ -1977,18 +1977,19 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       return seedIndex >= 0 ? { index: seedIndex, color: primaryScaleEntries[seedIndex] } : null;
     }
     
-    // Find the lightest primary color that meets AA (4.5:1) contrast with surface variant
+    // Find the lightest primary color that meets the compliance threshold with surface variant
     // This becomes the baseline for ALL primary tokens (surface, outline, text)
+    const contrastThreshold = complianceMode === "AAA" ? 7 : 4.5;
     let baselineIndex = -1;
     let baselineColor = null;
     
     if (semanticNeutral && semanticNeutral.surfaceVariant) {
       const surfaceVariantHex = semanticNeutral.surfaceVariant.hex;
       
-      // Scan from light to dark to find first passing color (lightest that meets AA)
+      // Scan from light to dark to find first passing color (lightest that meets threshold)
       for (let i = 0; i < primaryScaleEntries.length; i++) {
         const ratio = getContrastRatio(surfaceVariantHex, primaryScaleEntries[i].hex);
-        if (typeof ratio === "number" && ratio >= 4.5) {
+        if (typeof ratio === "number" && ratio >= contrastThreshold) {
           baselineIndex = i;
           baselineColor = primaryScaleEntries[i];
           break;
@@ -1996,13 +1997,13 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       }
     }
     
-    // If no color meets AA threshold, fall back to seed
+    // If no color meets threshold, fall back to seed
     if (baselineIndex === -1) {
       baselineIndex = seedIndex;
       baselineColor = seedIndex >= 0 ? primaryScaleEntries[seedIndex] : null;
     }
     
-    // All primary tokens derive from the baseline (lightest color meeting AA with surfaceVariant)
+    // All primary tokens derive from the baseline (lightest color meeting compliance threshold with surfaceVariant)
     // Low emphasis (subtle): 4 steps lighter than baseline (e.g., 600→200)
     // Medium emphasis: baseline itself (e.g., 600)
     // High emphasis (strong): 1 step darker than baseline (e.g., 600→700)
@@ -2077,11 +2078,11 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     if (semanticNeutral && semanticNeutral.surfaceInverted) {
       const darkBgHex = semanticNeutral.surfaceInverted.hex;
       
-      // Find lightest color meeting AA threshold for dark backgrounds
+      // Find lightest color meeting compliance threshold for dark backgrounds
       let inverseBaselineIndex = -1;
       for (let i = 0; i < primaryScaleEntries.length; i++) {
         const ratio = getContrastRatio(darkBgHex, primaryScaleEntries[i].hex);
-        if (typeof ratio === "number" && ratio >= 4.5) {
+        if (typeof ratio === "number" && ratio >= contrastThreshold) {
           inverseBaselineIndex = i;
           break;
         }
@@ -2914,7 +2915,8 @@ function generateTokens() {
       }
 
       // Pass primaryData, derived, and semantic to createTokens so it can use semantic.text.primary
-      const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived, semantic);
+      const complianceMode = getComplianceMode();
+      const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived, semantic, complianceMode);
 
       // Render semantic tokens preview
       if (semantic) {
