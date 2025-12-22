@@ -2371,15 +2371,16 @@ function generateSemanticFromPrimary(primaryScale, complianceMode = "AA") {
     return label ? `{color.palettes.primary.${label}}` : null;
   }
 
-  // Use a typical light surface (around neutral.100) as the background reference
-  // Assume a light background hex of around #F5F5F5 for text contrast checks
-  const lightBgHex = "#F5F5F5";
+  // Use a typical light surface variant (darker surface in light mode) as the background reference
+  // Assume surfaceVariant hex of around #E8E8E8 for text contrast checks
+  const lightBgHex = "#E8E8E8";
   const darkBgHex = "#1A1A1A";
 
-  // Text tokens for light theme: scan from dark to light, collect first 3 that meet threshold
+  // Text tokens for light theme: scan from light to dark, collect first 3 that meet threshold
+  // This ensures emphasisLow is the LIGHTEST passing color, then darker for medium, darkest for high
   const textTokens = { primary: null, secondary: null, tertiary: null };
   const passingText = [];
-  for (let i = primaryScale.length - 1; i >= 0 && passingText.length < 3; i--) {
+  for (let i = 0; i < primaryScale.length && passingText.length < 3; i++) {
     const ratio = getContrastRatio(lightBgHex, primaryScale[i].hex);
     if (typeof ratio === "number" && ratio >= textThreshold) {
       passingText.push(primaryScale[i]);
@@ -2387,20 +2388,21 @@ function generateSemanticFromPrimary(primaryScale, complianceMode = "AA") {
   }
   
   if (passingText.length === 1) {
-    textTokens.primary = passingText[0];
-    textTokens.secondary = passingText[0];
     textTokens.tertiary = passingText[0];
-  } else if (passingText.length === 2) {
-    textTokens.primary = passingText[0]; // darkest
     textTokens.secondary = passingText[0];
-    textTokens.tertiary = passingText[1]; // lighter
+    textTokens.primary = passingText[0];
+  } else if (passingText.length === 2) {
+    textTokens.tertiary = passingText[0]; // lightest
+    textTokens.secondary = passingText[0]; // duplicate to preserve hierarchy
+    textTokens.primary = passingText[1]; // darker
   } else if (passingText.length >= 3) {
-    textTokens.primary = passingText[0]; // darkest
-    textTokens.secondary = passingText[1]; // middle
-    textTokens.tertiary = passingText[2]; // lightest
+    textTokens.tertiary = passingText[0]; // lightest (emphasisLow)
+    textTokens.secondary = passingText[1]; // middle (emphasisMedium)
+    textTokens.primary = passingText[2]; // darkest (emphasisHigh)
   }
 
   // Text inverted: scan from light to dark for dark backgrounds
+  // For inverted (light text on dark bg), primary should be LIGHTEST, tertiary should be DARKEST
   const textInvertedTokens = { primary: null, secondary: null, tertiary: null };
   const passingInverted = [];
   for (let i = 0; i < primaryScale.length && passingInverted.length < 3; i++) {
@@ -2411,17 +2413,17 @@ function generateSemanticFromPrimary(primaryScale, complianceMode = "AA") {
   }
   
   if (passingInverted.length === 1) {
-    textInvertedTokens.primary = passingInverted[0];
-    textInvertedTokens.secondary = passingInverted[0];
     textInvertedTokens.tertiary = passingInverted[0];
-  } else if (passingInverted.length === 2) {
-    textInvertedTokens.primary = passingInverted[0];   // lightest
     textInvertedTokens.secondary = passingInverted[0];
-    textInvertedTokens.tertiary = passingInverted[1];  // darker
+    textInvertedTokens.primary = passingInverted[0];
+  } else if (passingInverted.length === 2) {
+    textInvertedTokens.primary = passingInverted[0];   // lightest (inverseHigh)
+    textInvertedTokens.secondary = passingInverted[0]; // duplicate
+    textInvertedTokens.tertiary = passingInverted[1];  // darker (inverseLow)
   } else if (passingInverted.length >= 3) {
-    textInvertedTokens.primary = passingInverted[0];   // lightest
-    textInvertedTokens.secondary = passingInverted[1]; // middle
-    textInvertedTokens.tertiary = passingInverted[2];  // darkest
+    textInvertedTokens.primary = passingInverted[0];   // lightest (inverseHigh)
+    textInvertedTokens.secondary = passingInverted[1]; // middle (inverseMedium)
+    textInvertedTokens.tertiary = passingInverted[2];  // darkest (inverseLow)
   }
 
   return {
