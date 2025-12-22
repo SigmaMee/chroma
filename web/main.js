@@ -397,11 +397,6 @@ const primaryMatrixPassCount = document.getElementById("primary-matrix-pass-coun
 const primaryMatrixNote = document.getElementById("primary-matrix-note");
 const complianceBtns = document.querySelectorAll(".compliance-btn");
 const getComplianceMode = () => document.querySelector(".compliance-btn.active")?.dataset.level || "AA";
-
-// Debug: Log compliance buttons
-console.log("Compliance buttons found:", complianceBtns.length, complianceBtns);
-console.log("Active button:", document.querySelector(".compliance-btn.active"));
-console.log("Current compliance mode:", getComplianceMode());
 const output = document.getElementById("output");
 const generateBtn = document.getElementById("generate");
 const copyBtn = document.getElementById("copy");
