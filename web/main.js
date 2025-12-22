@@ -1980,11 +1980,13 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
     // Find the lightest primary color that meets the compliance threshold with surface variant
     // This becomes the baseline for ALL primary tokens (surface, outline, text)
     const contrastThreshold = complianceMode === "AAA" ? 7 : 4.5;
+    console.log('Primary token baseline search - compliance mode:', complianceMode, 'threshold:', contrastThreshold);
     let baselineIndex = -1;
     let baselineColor = null;
     
     if (semanticNeutral && semanticNeutral.surfaceVariant) {
       const surfaceVariantHex = semanticNeutral.surfaceVariant.hex;
+      console.log('Searching for baseline color with', contrastThreshold, 'contrast against surfaceVariant:', surfaceVariantHex);
       
       // Scan from light to dark to find first passing color (lightest that meets threshold)
       for (let i = 0; i < primaryScaleEntries.length; i++) {
@@ -1992,6 +1994,7 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
         if (typeof ratio === "number" && ratio >= contrastThreshold) {
           baselineIndex = i;
           baselineColor = primaryScaleEntries[i];
+          console.log('Found baseline at index', i, ':', getPrimaryLabel(baselineColor), baselineColor.hex, 'contrast:', ratio.toFixed(2));
           break;
         }
       }
@@ -2916,6 +2919,7 @@ function generateTokens() {
 
       // Pass primaryData, derived, and semantic to createTokens so it can use semantic.text.primary
       const complianceMode = getComplianceMode();
+      console.log('Generating tokens with compliance mode:', complianceMode);
       const tokens = createTokens(scale.concat(primaryScale), prefixInput ? prefixInput.value : "", primaryData, derived, semantic, complianceMode);
 
       // Render semantic tokens preview
