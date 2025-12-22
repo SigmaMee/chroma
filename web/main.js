@@ -3109,6 +3109,7 @@ complianceBtns.forEach(btn => {
     complianceBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     
+    // Re-render palette matrices with new compliance mode
     const primary = normalizeHex(primaryInput.value);
     const saturation = clamp(Number(satInput.value) || 0, 0, 30);
     const derived = deriveGreyscaleColor(primary, saturation, currentTintColorMode);
@@ -3123,12 +3124,8 @@ complianceBtns.forEach(btn => {
       renderMatrix();
     }
     
-    // Update semantic matrix if tokens exist
-    if (currentTokens) {
-      if (wcagTab.classList.contains("active")) {
-        renderSemanticMatrix(currentTokens, getComplianceMode(), currentTheme);
-      }
-    }
+    // Re-generate semantic tokens with new compliance mode
+    generateTokens();
   });
 });
 
