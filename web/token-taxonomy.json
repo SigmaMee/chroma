@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Chroma Token Taxonomy",
+  "description": "Defines the structure and naming conventions for semantic tokens in Chroma",
+  "version": "1.0.0",
+  "themes": ["light", "dark"],
+  "tokenTypes": {
+    "surface": {
+      "label": "Surfaces",
+      "description": "Background and surface colors",
+      "semanticValues": {
+        "neutral": {
+          "label": "Neutral",
+          "paletteRef": "neutral",
+          "subtypes": [
+            {
+              "id": "base",
+              "label": "Base",
+              "description": "Foundational surface color"
+            },
+            {
+              "id": "default",
+              "label": "Default",
+              "description": "Primary surface color"
+            },
+            {
+              "id": "variant",
+              "label": "Variant",
+              "description": "Alternative surface color"
+            },
+            {
+              "id": "inverted",
+              "label": "Inverted",
+              "description": "Inverted surface color for contrast"
+            },
+            {
+              "id": "invertedVariant",
+              "label": "Inverted Variant",
+              "description": "Inverted variant surface color"
+            }
+          ]
+        },
+        "primary": {
+          "label": "Primary",
+          "paletteRef": "primary",
+          "subtypes": [
+            {
+              "id": "primary",
+              "label": "Primary",
+              "description": "Primary brand surface"
+            },
+            {
+              "id": "primarySubtle",
+              "label": "Primary Subtle",
+              "description": "Subtle primary surface"
+            },
+            {
+              "id": "primaryIntense",
+              "label": "Primary Intense",
+              "description": "Intense primary surface"
+            }
+          ]
+        }
+      }
+    },
+    "text": {
+      "label": "Text",
+      "description": "Text and typography colors",
+      "semanticValues": {
+        "neutral": {
+          "label": "Neutral",
+          "paletteRef": "neutral",
+          "subtypes": [
+            {
+              "id": "primary",
+              "label": "Primary",
+              "description": "Primary text color"
+            },
+            {
+              "id": "secondary",
+              "label": "Secondary",
+              "description": "Secondary text color"
+            },
+            {
+              "id": "tertiary",
+              "label": "Tertiary",
+              "description": "Tertiary text color"
+            },
+            {
+              "id": "primaryInverse",
+              "label": "Primary Inverse",
+              "description": "Inverted primary text color"
+            },
+            {
+              "id": "secondaryInverse",
+              "label": "Secondary Inverse",
+              "description": "Inverted secondary text color"
+            },
+            {
+              "id": "tertiaryInverse",
+              "label": "Tertiary Inverse",
+              "description": "Inverted tertiary text color"
+            }
+          ]
+        },
+        "primary": {
+          "label": "On Primary",
+          "paletteRef": "primary",
+          "subtypes": [
+            {
+              "id": "default",
+              "label": "Default",
+              "description": "Text color on primary surfaces"
+            }
+          ]
+        }
+      }
+    },
+    "outline": {
+      "label": "Outlines",
+      "description": "Border and outline colors",
+      "semanticValues": {
+        "neutral": {
+          "label": "Neutral",
+          "paletteRef": "neutral",
+          "subtypes": [
+            {
+              "id": "subtle",
+              "label": "Subtle",
+              "description": "Subtle outline color"
+            },
+            {
+              "id": "default",
+              "label": "Default",
+              "description": "Default outline color"
+            },
+            {
+              "id": "intense",
+              "label": "Intense",
+              "description": "Intense outline color"
+            },
+            {
+              "id": "inverseSubtle",
+              "label": "Inverse Subtle",
+              "description": "Inverted subtle outline color"
+            },
+            {
+              "id": "inverse",
+              "label": "Inverse",
+              "description": "Inverted outline color"
+            },
+            {
+              "id": "inverseIntense",
+              "label": "Inverse Intense",
+              "description": "Inverted intense outline color"
+            }
+          ]
+        },
+        "primary": {
+          "label": "Primary",
+          "paletteRef": "primary",
+          "subtypes": [
+            {
+              "id": "primary",
+              "label": "Primary",
+              "description": "Primary brand outline"
+            },
+            {
+              "id": "primarySubtle",
+              "label": "Primary Subtle",
+              "description": "Subtle primary outline"
+            },
+            {
+              "id": "primaryIntense",
+              "label": "Primary Intense",
+              "description": "Intense primary outline"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

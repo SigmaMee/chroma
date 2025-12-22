@@ -723,11 +723,33 @@ function camelCaseToReadable(str) {
     .trim();
 }
 
+/**
+ * Helper function to get semantic tokens from either new or legacy location
+ * New: tokens.semantic[theme]
+ * Legacy: tokens.color.semantic[theme]
+ */
+function getSemanticTokens(tokens, theme) {
+  if (!tokens) return null;
+  
+  // Try new location first (taxonomy-driven)
+  if (tokens.semantic && tokens.semantic[theme]) {
+    return tokens.semantic[theme];
+  }
+  
+  // Fall back to legacy location
+  if (tokens.color && tokens.color.semantic && tokens.color.semantic[theme]) {
+    return tokens.color.semantic[theme];
+  }
+  
+  return null;
+}
+
 function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
   const semanticMatrixGrid = document.getElementById("semantic-matrix-grid");
   const semanticMatrixPassCount = document.getElementById("semantic-matrix-pass-count");
   
-  if (!semanticMatrixGrid || !semanticMatrixPassCount || !tokens || !tokens.color || !tokens.color.semantic || !tokens.color.semantic[theme]) {
+  const semantic = getSemanticTokens(tokens, theme);
+  if (!semanticMatrixGrid || !semanticMatrixPassCount || !semantic) {
     return;
   }
 
@@ -735,7 +757,6 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
   if (semanticMatrixPassCount) semanticMatrixPassCount.textContent = "0";
 
   // Extract semantic tokens from tokens object (using selected theme)
-  const semantic = tokens.color.semantic[theme];
   
   // Helper to resolve hex value from $value reference or direct hex
   function resolveHex(obj) {
@@ -905,7 +926,9 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
 
 function renderSemanticPreview(semantic, complianceMode, tokens, scale, theme = 'light') {
   const previewContainer = document.getElementById("semantic-preview-container");
-  if (!previewContainer || !tokens || !tokens.color || !tokens.color.semantic || !tokens.color.semantic[theme]) {
+  const semanticTokens = getSemanticTokens(tokens, theme);
+  
+  if (!previewContainer || !semanticTokens) {
     return;
   }
 
@@ -938,7 +961,6 @@ function renderSemanticPreview(semantic, complianceMode, tokens, scale, theme = 
 
   // Build CSS variables from tokens object
   const cssVars = {};
-  const semanticTokens = tokens.color.semantic[theme];
   
   // Map neutral surface tokens
   if (semanticTokens.surface && semanticTokens.surface.neutral) {
@@ -1257,6 +1279,259 @@ function updateHarmonySwatches() {
   });
 }
 
+/**
+ * Generate semantic tokens from taxonomy for a specific theme
+ * This function creates tokens following the taxonomy structure dynamically
+ */
+function generateSemanticTokensFromTaxonomy(theme, semanticNeutral, primaryData, scale) {
+  // Check if taxonomy is available
+  if (!window.TAXONOMY || !window.TAXONOMY.tokenTypes) {
+    console.warn('Taxonomy not available, skipping taxonomy-based token generation');
+    return null;
+  }
+
+  const taxonomy = window.TAXONOMY;
+  const tokens = {};
+
+  // Iterate through each tokenType (surface, text, outline)
+  Object.keys(taxonomy.tokenTypes).forEach(tokenTypeId => {
+    const tokenType = taxonomy.tokenTypes[tokenTypeId];
+    tokens[tokenTypeId] = {};
+
+    // Iterate through each semanticValue (neutral, primary) within the tokenType
+    Object.keys(tokenType.semanticValues).forEach(semanticValueId => {
+      const semanticValue = tokenType.semanticValues[semanticValueId];
+      tokens[tokenTypeId][semanticValueId] = {};
+
+      // Iterate through each subtype within the semanticValue
+      semanticValue.subtypes.forEach(subtype => {
+        // Build token name using taxonomy helper
+        const tokenName = taxonomy.buildTokenName(tokenTypeId, subtype.id);
+        if (!tokenName) {
+          console.warn(`Failed to build token name for ${tokenTypeId}.${semanticValueId}.${subtype.id}`);
+          return;
+        }
+
+        // Build override key
+        const overrideKey = taxonomy.buildOverrideKey(tokenTypeId, semanticValueId, tokenName);
+
+        // Determine default value based on tokenType, semanticValue, and subtype
+        let defaultValue = null;
+
+        // Get default value from semanticNeutral or primaryData
+        if (tokenTypeId === 'surface' && semanticValueId === 'neutral') {
+          defaultValue = getSemanticNeutralSurfaceValue(theme, subtype.id, semanticNeutral);
+        } else if (tokenTypeId === 'surface' && semanticValueId === 'primary') {
+          defaultValue = getSemanticPrimarySurfaceValue(theme, subtype.id, primaryData, scale);
+        } else if (tokenTypeId === 'text' && semanticValueId === 'neutral') {
+          defaultValue = getSemanticNeutralTextValue(theme, subtype.id, semanticNeutral);
+        } else if (tokenTypeId === 'text' && semanticValueId === 'primary') {
+          defaultValue = getSemanticPrimaryTextValue(theme, subtype.id, semanticNeutral, primaryData);
+        } else if (tokenTypeId === 'outline' && semanticValueId === 'neutral') {
+          defaultValue = getSemanticNeutralOutlineValue(theme, subtype.id, semanticNeutral);
+        } else if (tokenTypeId === 'outline' && semanticValueId === 'primary') {
+          defaultValue = getSemanticPrimaryOutlineValue(theme, subtype.id, primaryData, scale);
+        }
+
+        // Apply override if exists, otherwise use default
+        const finalValue = semanticOverrides[overrideKey] || defaultValue;
+
+        if (finalValue) {
+          tokens[tokenTypeId][semanticValueId][tokenName] = {
+            $value: finalValue,
+            $type: "color"
+          };
+        }
+      });
+    });
+  });
+
+  return tokens;
+}
+
+/**
+ * Helper functions to get semantic token values based on theme and subtype
+ * These map the taxonomy subtypes to the existing semanticNeutral structure
+ */
+function getSemanticNeutralSurfaceValue(theme, subtypeId, semanticNeutral) {
+  if (!semanticNeutral) return null;
+
+  if (theme === 'light') {
+    switch (subtypeId) {
+      case 'base':
+        return "{color.seed.white}";
+      case 'default':
+        return semanticNeutral.surface ? semanticNeutral.surface.ref : null;
+      case 'variant':
+        return semanticNeutral.surfaceVariant ? semanticNeutral.surfaceVariant.ref : null;
+      case 'inverted':
+        return semanticNeutral.surfaceInverted ? semanticNeutral.surfaceInverted.ref : null;
+      case 'invertedVariant':
+        return semanticNeutral.surfaceInvertedVariant ? semanticNeutral.surfaceInvertedVariant.ref : null;
+    }
+  } else if (theme === 'dark') {
+    // Dark theme swaps surfaces
+    switch (subtypeId) {
+      case 'base':
+        return "{color.seed.black}";
+      case 'default':
+        return semanticNeutral.surfaceInvertedVariant ? semanticNeutral.surfaceInvertedVariant.ref : null;
+      case 'variant':
+        return semanticNeutral.surfaceInverted ? semanticNeutral.surfaceInverted.ref : null;
+      case 'inverted':
+        return semanticNeutral.surface ? semanticNeutral.surface.ref : null;
+      case 'invertedVariant':
+        return "{color.seed.white}";
+    }
+  }
+
+  return null;
+}
+
+function getSemanticNeutralTextValue(theme, subtypeId, semanticNeutral) {
+  if (!semanticNeutral || !semanticNeutral.text) return null;
+
+  if (theme === 'light') {
+    switch (subtypeId) {
+      case 'primary':
+        return semanticNeutral.text.primary ? semanticNeutral.text.primary.ref : null;
+      case 'secondary':
+        return semanticNeutral.text.secondary ? semanticNeutral.text.secondary.ref : null;
+      case 'tertiary':
+        return semanticNeutral.text.tertiary ? semanticNeutral.text.tertiary.ref : null;
+      case 'primaryInverse':
+        return semanticNeutral.textInverted?.primary ? semanticNeutral.textInverted.primary.ref : null;
+      case 'secondaryInverse':
+        return semanticNeutral.textInverted?.secondary ? semanticNeutral.textInverted.secondary.ref : null;
+      case 'tertiaryInverse':
+        return semanticNeutral.textInverted?.tertiary ? semanticNeutral.textInverted.tertiary.ref : null;
+    }
+  } else if (theme === 'dark') {
+    // Dark theme swaps text
+    switch (subtypeId) {
+      case 'primary':
+        return semanticNeutral.textInverted?.primary ? semanticNeutral.textInverted.primary.ref : null;
+      case 'secondary':
+        return semanticNeutral.textInverted?.secondary ? semanticNeutral.textInverted.secondary.ref : null;
+      case 'tertiary':
+        return semanticNeutral.textInverted?.tertiary ? semanticNeutral.textInverted.tertiary.ref : null;
+      case 'primaryInverse':
+        return semanticNeutral.text.primary ? semanticNeutral.text.primary.ref : null;
+      case 'secondaryInverse':
+        return semanticNeutral.text.secondary ? semanticNeutral.text.secondary.ref : null;
+      case 'tertiaryInverse':
+        return semanticNeutral.text.tertiary ? semanticNeutral.text.tertiary.ref : null;
+    }
+  }
+
+  return null;
+}
+
+function getSemanticNeutralOutlineValue(theme, subtypeId, semanticNeutral) {
+  if (!semanticNeutral || !semanticNeutral.outline) return null;
+
+  if (theme === 'light') {
+    switch (subtypeId) {
+      case 'subtle':
+        return semanticNeutral.outline.subtle ? semanticNeutral.outline.subtle.ref : null;
+      case 'default':
+        return semanticNeutral.outline.default ? semanticNeutral.outline.default.ref : null;
+      case 'intense':
+        return semanticNeutral.outline.intense ? semanticNeutral.outline.intense.ref : null;
+      case 'inverseSubtle':
+        return semanticNeutral.outlineInverted?.subtle ? semanticNeutral.outlineInverted.subtle.ref : null;
+      case 'inverse':
+        return semanticNeutral.outlineInverted?.default ? semanticNeutral.outlineInverted.default.ref : null;
+      case 'inverseIntense':
+        return semanticNeutral.outlineInverted?.intense ? semanticNeutral.outlineInverted.intense.ref : null;
+    }
+  } else if (theme === 'dark') {
+    // Dark theme swaps outlines
+    switch (subtypeId) {
+      case 'subtle':
+        return semanticNeutral.outlineInverted?.subtle ? semanticNeutral.outlineInverted.subtle.ref : null;
+      case 'default':
+        return semanticNeutral.outlineInverted?.default ? semanticNeutral.outlineInverted.default.ref : null;
+      case 'intense':
+        return semanticNeutral.outlineInverted?.intense ? semanticNeutral.outlineInverted.intense.ref : null;
+      case 'inverseSubtle':
+        return semanticNeutral.outline.subtle ? semanticNeutral.outline.subtle.ref : null;
+      case 'inverse':
+        return semanticNeutral.outline.default ? semanticNeutral.outline.default.ref : null;
+      case 'inverseIntense':
+        return semanticNeutral.outline.intense ? semanticNeutral.outline.intense.ref : null;
+    }
+  }
+
+  return null;
+}
+
+function getSemanticPrimarySurfaceValue(theme, subtypeId, primaryData, scale) {
+  if (!primaryData || !primaryData.hex) return null;
+
+  // For all primary surface tokens, use the same value in both themes
+  switch (subtypeId) {
+    case 'primary':
+      return "{color.seed.primary}";
+    case 'primarySubtle':
+    case 'primaryIntense':
+      // Find the primary seed in the scale
+      const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
+      let seedIndex = primaryScaleEntries.findIndex(item => item.isSeed);
+      
+      if (seedIndex !== -1) {
+        const getPrimaryLabel = (item) => {
+          if (!item || !item.name) return null;
+          const m = item.name.match(/(\d+)/);
+          return m ? m[0] : null;
+        };
+
+        if (subtypeId === 'primarySubtle') {
+          // Subtle: prefer three steps lighter
+          let idx = seedIndex >= 3 ? seedIndex - 3 : seedIndex >= 2 ? seedIndex - 2 : seedIndex > 0 ? seedIndex - 1 : -1;
+          if (idx >= 0) {
+            const label = getPrimaryLabel(primaryScaleEntries[idx]);
+            return label ? `{color.palettes.primary.${label}}` : null;
+          }
+        } else if (subtypeId === 'primaryIntense') {
+          // Intense: one step darker
+          let idx = seedIndex < primaryScaleEntries.length - 1 ? seedIndex + 1 : -1;
+          if (idx >= 0) {
+            const label = getPrimaryLabel(primaryScaleEntries[idx]);
+            return label ? `{color.palettes.primary.${label}}` : null;
+          }
+        }
+      }
+      return null;
+  }
+
+  return null;
+}
+
+function getSemanticPrimaryOutlineValue(theme, subtypeId, primaryData, scale) {
+  // Primary outlines use same logic as surfaces
+  return getSemanticPrimarySurfaceValue(theme, subtypeId, primaryData, scale);
+}
+
+function getSemanticPrimaryTextValue(theme, subtypeId, semanticNeutral, primaryData) {
+  if (subtypeId !== 'default') return null;
+  if (!semanticNeutral || !semanticNeutral.text || !primaryData) return null;
+
+  // Check contrast between primary surface and textPrimary from neutral scale
+  const textPrimaryHex = semanticNeutral.text.primary?.hex;
+  if (!textPrimaryHex) {
+    return "{color.seed.white}";
+  }
+
+  const contrastOnPrimary = getContrastRatio(primaryData.hex, textPrimaryHex);
+  
+  if (typeof contrastOnPrimary === "number" && contrastOnPrimary >= 4.5) {
+    return semanticNeutral.text.primary.ref;
+  } else {
+    return "{color.seed.white}";
+  }
+}
+
 function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) {
   const safePrefix = (prefix || "")
     .trim()
@@ -1347,189 +1622,209 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     }
   });
 
-  // Initialize semantic structure with light and dark themes
-  // semantic.light and semantic.dark will each contain { surface, outline, text }
-  root[colorKey].semantic = {
-    light: {
-      surface: {},
-      outline: {},
-      text: {},
-    },
-    dark: {
-      surface: {},
-      outline: {},
-      text: {},
-    }
-  };
-
-  // Add semantic tokens from pre-generated neutral semantic (passed as parameter)
-  if (semanticNeutral) {
-    // === LIGHT THEME ===
-    // Add neutral surface tokens under semantic.light.surface.neutral
-    root[colorKey].semantic.light.surface.neutral = {};
-    root[colorKey].semantic.light.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
-    if (semanticNeutral.surface) root[colorKey].semantic.light.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
-    if (semanticNeutral.surfaceVariant) root[colorKey].semantic.light.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceVariant"] || semanticNeutral.surfaceVariant.ref, $type: "color" };
-    if (semanticNeutral.surfaceInverted) root[colorKey].semantic.light.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
-    if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.light.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
-
-    // Add neutral text tokens under semantic.light.text.neutral
-    root[colorKey].semantic.light.text.neutral = {};
-    if (semanticNeutral.text) {
-      if (semanticNeutral.text.primary) root[colorKey].semantic.light.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
-      if (semanticNeutral.text.secondary) root[colorKey].semantic.light.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
-      if (semanticNeutral.text.tertiary) root[colorKey].semantic.light.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
+  // Generate semantic tokens from taxonomy
+  // Use taxonomy-driven generation if available, otherwise fall back to legacy hardcoded structure
+  if (window.TAXONOMY && window.TAXONOMY.tokenTypes) {
+    // Initialize semantic structure at root level (breaking change from color.semantic to semantic)
+    if (!root.semantic) {
+      root.semantic = {};
     }
 
-    // Add neutral text inverted tokens directly under semantic.light.text.neutral (not nested in inverted)
-    if (semanticNeutral.textInverted) {
-      if (semanticNeutral.textInverted.primary) root[colorKey].semantic.light.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.light.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.light.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
-    }
-
-    // Add neutral outline tokens under semantic.light.outline.neutral
-    root[colorKey].semantic.light.outline.neutral = {};
-    if (semanticNeutral.outline) {
-      if (semanticNeutral.outline.subtle) root[colorKey].semantic.light.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
-      if (semanticNeutral.outline.default) root[colorKey].semantic.light.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
-      if (semanticNeutral.outline.intense) root[colorKey].semantic.light.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
-    }
-
-    // Add neutral outline inverted tokens directly under semantic.light.outline.neutral (not nested in inverted)
-    if (semanticNeutral.outlineInverted) {
-      if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.light.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.light.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.light.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
-    }
-
-    // === DARK THEME (inverted) ===
-    // In dark theme, swap surface <-> surfaceInverted and text <-> textInverted
-    root[colorKey].semantic.dark.surface.neutral = {};
-    // Base uses black seed color in dark theme
-    root[colorKey].semantic.dark.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.black}", $type: "color" };
-    if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.dark.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
-    if (semanticNeutral.surfaceInverted) root[colorKey].semantic.dark.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
-    // Inverted surfaces in dark theme are the light surfaces
-    if (semanticNeutral.surface) root[colorKey].semantic.dark.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
-    root[colorKey].semantic.dark.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
-
-    // Dark theme text: swap text <-> textInverted
-    root[colorKey].semantic.dark.text.neutral = {};
-    if (semanticNeutral.textInverted) {
-      if (semanticNeutral.textInverted.primary) root[colorKey].semantic.dark.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.dark.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
-      if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
-    }
-    if (semanticNeutral.text) {
-      if (semanticNeutral.text.primary) root[colorKey].semantic.dark.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
-      if (semanticNeutral.text.secondary) root[colorKey].semantic.dark.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
-      if (semanticNeutral.text.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
-    }
-
-    // Dark theme outlines: swap outline <-> outlineInverted
-    root[colorKey].semantic.dark.outline.neutral = {};
-    if (semanticNeutral.outlineInverted) {
-      if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.dark.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.dark.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
-      if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.dark.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
-    }
-    if (semanticNeutral.outline) {
-      if (semanticNeutral.outline.subtle) root[colorKey].semantic.dark.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
-      if (semanticNeutral.outline.default) root[colorKey].semantic.dark.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
-      if (semanticNeutral.outline.intense) root[colorKey].semantic.dark.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
-    }
-  }
-
-  // Add semantic tokens for primary scale (primary surfaces & outlines)
-  // Always use primaryData (seed) for surfacePrimary, then calculate subtle/intense from it
-  if (primaryData && primaryData.hex && primaryData.hsl) {
-    // Initialize primary sub-objects if they don't exist
-    if (!root[colorKey].semantic.light.surface.primary) root[colorKey].semantic.light.surface.primary = {};
-    if (!root[colorKey].semantic.light.outline.primary) root[colorKey].semantic.light.outline.primary = {};
-    if (!root[colorKey].semantic.dark.surface.primary) root[colorKey].semantic.dark.surface.primary = {};
-    if (!root[colorKey].semantic.dark.outline.primary) root[colorKey].semantic.dark.outline.primary = {};
-
-    // surfacePrimary & outlinePrimary -> always use seed (same for light and dark)
-    root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
-    root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
-
-    // Find the primary seed in the scale and pick adjacent tokens
-    const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
+    // Generate tokens for both light and dark themes
+    window.TAXONOMY.themes.forEach(theme => {
+      const themeTokens = generateSemanticTokensFromTaxonomy(theme, semanticNeutral, primaryData, scale);
+      if (themeTokens) {
+        root.semantic[theme] = themeTokens;
+      }
+    });
+  } else {
+    // Legacy fallback: use the old hardcoded structure under color.semantic
+    console.warn('Taxonomy not available, using legacy semantic token structure');
     
-    // Find the seed index
-    let seedIndex = -1;
-    for (let i = 0; i < primaryScaleEntries.length; i++) {
-      if (primaryScaleEntries[i].isSeed) {
-        seedIndex = i;
-        break;
+    // Initialize semantic structure with light and dark themes
+    // semantic.light and semantic.dark will each contain { surface, outline, text }
+    root[colorKey].semantic = {
+      light: {
+        surface: {},
+        outline: {},
+        text: {},
+      },
+      dark: {
+        surface: {},
+        outline: {},
+        text: {},
+      }
+    };
+
+    // Add semantic tokens from pre-generated neutral semantic (passed as parameter)
+    if (semanticNeutral) {
+      // === LIGHT THEME ===
+      // Add neutral surface tokens under semantic.light.surface.neutral
+      root[colorKey].semantic.light.surface.neutral = {};
+      root[colorKey].semantic.light.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
+      if (semanticNeutral.surface) root[colorKey].semantic.light.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
+      if (semanticNeutral.surfaceVariant) root[colorKey].semantic.light.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceVariant"] || semanticNeutral.surfaceVariant.ref, $type: "color" };
+      if (semanticNeutral.surfaceInverted) root[colorKey].semantic.light.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
+      if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.light.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
+
+      // Add neutral text tokens under semantic.light.text.neutral
+      root[colorKey].semantic.light.text.neutral = {};
+      if (semanticNeutral.text) {
+        if (semanticNeutral.text.primary) root[colorKey].semantic.light.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
+        if (semanticNeutral.text.secondary) root[colorKey].semantic.light.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
+        if (semanticNeutral.text.tertiary) root[colorKey].semantic.light.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
+      }
+
+      // Add neutral text inverted tokens directly under semantic.light.text.neutral (not nested in inverted)
+      if (semanticNeutral.textInverted) {
+        if (semanticNeutral.textInverted.primary) root[colorKey].semantic.light.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
+        if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.light.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
+        if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.light.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
+      }
+
+      // Add neutral outline tokens under semantic.light.outline.neutral
+      root[colorKey].semantic.light.outline.neutral = {};
+      if (semanticNeutral.outline) {
+        if (semanticNeutral.outline.subtle) root[colorKey].semantic.light.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
+        if (semanticNeutral.outline.default) root[colorKey].semantic.light.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
+        if (semanticNeutral.outline.intense) root[colorKey].semantic.light.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
+      }
+
+      // Add neutral outline inverted tokens directly under semantic.light.outline.neutral (not nested in inverted)
+      if (semanticNeutral.outlineInverted) {
+        if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.light.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
+        if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.light.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
+        if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.light.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
+      }
+
+      // === DARK THEME (inverted) ===
+      // In dark theme, swap surface <-> surfaceInverted and text <-> textInverted
+      root[colorKey].semantic.dark.surface.neutral = {};
+      // Base uses black seed color in dark theme
+      root[colorKey].semantic.dark.surface.neutral.surfaceBase = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.black}", $type: "color" };
+      if (semanticNeutral.surfaceInvertedVariant) root[colorKey].semantic.dark.surface.neutral.surfaceDefault = { $value: semanticOverrides["surface.neutral.surfaceInvertedVariant"] || semanticNeutral.surfaceInvertedVariant.ref, $type: "color" };
+      if (semanticNeutral.surfaceInverted) root[colorKey].semantic.dark.surface.neutral.surfaceVariant = { $value: semanticOverrides["surface.neutral.surfaceInverted"] || semanticNeutral.surfaceInverted.ref, $type: "color" };
+      // Inverted surfaces in dark theme are the light surfaces
+      if (semanticNeutral.surface) root[colorKey].semantic.dark.surface.neutral.surfaceInverted = { $value: semanticOverrides["surface.neutral.surfaceDefault"] || semanticNeutral.surface.ref, $type: "color" };
+      root[colorKey].semantic.dark.surface.neutral.surfaceInvertedVariant = { $value: semanticOverrides["surface.neutral.surfaceBase"] || "{color.seed.white}", $type: "color" };
+
+      // Dark theme text: swap text <-> textInverted
+      root[colorKey].semantic.dark.text.neutral = {};
+      if (semanticNeutral.textInverted) {
+        if (semanticNeutral.textInverted.primary) root[colorKey].semantic.dark.text.neutral.textPrimary = { $value: semanticOverrides["text.neutral.textPrimaryInverse"] || semanticNeutral.textInverted.primary.ref, $type: "color" };
+        if (semanticNeutral.textInverted.secondary) root[colorKey].semantic.dark.text.neutral.textSecondary = { $value: semanticOverrides["text.neutral.textSecondaryInverse"] || semanticNeutral.textInverted.secondary.ref, $type: "color" };
+        if (semanticNeutral.textInverted.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiary = { $value: semanticOverrides["text.neutral.textTertiaryInverse"] || semanticNeutral.textInverted.tertiary.ref, $type: "color" };
+      }
+      if (semanticNeutral.text) {
+        if (semanticNeutral.text.primary) root[colorKey].semantic.dark.text.neutral.textPrimaryInverse = { $value: semanticOverrides["text.neutral.textPrimary"] || semanticNeutral.text.primary.ref, $type: "color" };
+        if (semanticNeutral.text.secondary) root[colorKey].semantic.dark.text.neutral.textSecondaryInverse = { $value: semanticOverrides["text.neutral.textSecondary"] || semanticNeutral.text.secondary.ref, $type: "color" };
+        if (semanticNeutral.text.tertiary) root[colorKey].semantic.dark.text.neutral.textTertiaryInverse = { $value: semanticOverrides["text.neutral.textTertiary"] || semanticNeutral.text.tertiary.ref, $type: "color" };
+      }
+
+      // Dark theme outlines: swap outline <-> outlineInverted
+      root[colorKey].semantic.dark.outline.neutral = {};
+      if (semanticNeutral.outlineInverted) {
+        if (semanticNeutral.outlineInverted.subtle) root[colorKey].semantic.dark.outline.neutral.outlineSubtle = { $value: semanticOverrides["outline.neutral.outlineInverseSubtle"] || semanticNeutral.outlineInverted.subtle.ref, $type: "color" };
+        if (semanticNeutral.outlineInverted.default) root[colorKey].semantic.dark.outline.neutral.outlineDefault = { $value: semanticOverrides["outline.neutral.outlineInverse"] || semanticNeutral.outlineInverted.default.ref, $type: "color" };
+        if (semanticNeutral.outlineInverted.intense) root[colorKey].semantic.dark.outline.neutral.outlineIntense = { $value: semanticOverrides["outline.neutral.outlineInverseIntense"] || semanticNeutral.outlineInverted.intense.ref, $type: "color" };
+      }
+      if (semanticNeutral.outline) {
+        if (semanticNeutral.outline.subtle) root[colorKey].semantic.dark.outline.neutral.outlineInverseSubtle = { $value: semanticOverrides["outline.neutral.outlineSubtle"] || semanticNeutral.outline.subtle.ref, $type: "color" };
+        if (semanticNeutral.outline.default) root[colorKey].semantic.dark.outline.neutral.outlineInverse = { $value: semanticOverrides["outline.neutral.outlineDefault"] || semanticNeutral.outline.default.ref, $type: "color" };
+        if (semanticNeutral.outline.intense) root[colorKey].semantic.dark.outline.neutral.outlineInverseIntense = { $value: semanticOverrides["outline.neutral.outlineIntense"] || semanticNeutral.outline.intense.ref, $type: "color" };
       }
     }
-    
-    // Extract label helper
-    function getPrimaryLabel(item) {
-      if (!item || !item.name) return null;
-      const m = item.name.match(/(\d+)/);
-      return m ? m[0] : null;
-    }
-    
-    let subtleLabel = null;
-    let intenseLabel = null;
-    
-    if (seedIndex !== -1) {
-      // Subtle: prefer three steps lighter (e.g., 500 -> 200)
-      if (seedIndex >= 3) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 3]);
-      } else if (seedIndex >= 2) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 2]);
-      } else if (seedIndex > 0) {
-        subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 1]);
-      }
-      // Intense: token after seed (darker)
-      if (seedIndex < primaryScaleEntries.length - 1) {
-        intenseLabel = getPrimaryLabel(primaryScaleEntries[seedIndex + 1]);
-      }
-    }
-    
-    if (subtleLabel) {
-      root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-    }
-    
-    if (intenseLabel) {
-      root[colorKey].semantic.light.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
-    }
 
-    // textOnPrimary: check contrast between primary surface (seed) and textPrimary from neutral scale
-    // If contrast >= 4.5:1, use textPrimary, else use white (same for both themes)
-    if (!root[colorKey].semantic.light.text.onPrimary) root[colorKey].semantic.light.text.onPrimary = {};
-    if (!root[colorKey].semantic.dark.text.onPrimary) root[colorKey].semantic.dark.text.onPrimary = {};
+    // Add semantic tokens for primary scale (primary surfaces & outlines)
+    // Always use primaryData (seed) for surfacePrimary, then calculate subtle/intense from it
+    if (primaryData && primaryData.hex && primaryData.hsl) {
+      // Initialize primary sub-objects if they don't exist
+      if (!root[colorKey].semantic.light.surface.primary) root[colorKey].semantic.light.surface.primary = {};
+      if (!root[colorKey].semantic.light.outline.primary) root[colorKey].semantic.light.outline.primary = {};
+      if (!root[colorKey].semantic.dark.surface.primary) root[colorKey].semantic.dark.surface.primary = {};
+      if (!root[colorKey].semantic.dark.outline.primary) root[colorKey].semantic.dark.outline.primary = {};
 
-    if (semanticNeutral && semanticNeutral.text && semanticNeutral.text.primary) {
-      // Use the hex value directly from the semantic object
-      const textPrimaryHex = semanticNeutral.text.primary.hex;
-      const contrastOnPrimary = getContrastRatio(primaryData.hex, textPrimaryHex);
+      // surfacePrimary & outlinePrimary -> always use seed (same for light and dark)
+      root[colorKey].semantic.light.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimary = { $value: semanticOverrides["surface.primary.surfacePrimary"] || "{color.seed.primary}", $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+
+      // Find the primary seed in the scale and pick adjacent tokens
+      const primaryScaleEntries = scale.filter((item) => item.name.includes("color.primary"));
       
-      if (typeof contrastOnPrimary === "number" && contrastOnPrimary >= 4.5) {
-        // Use neutral text.primary as textOnPrimary
-        root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
-        root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
-      } else {
-        // Use white
-        root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
-        root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
+      // Find the seed index
+      let seedIndex = -1;
+      for (let i = 0; i < primaryScaleEntries.length; i++) {
+        if (primaryScaleEntries[i].isSeed) {
+          seedIndex = i;
+          break;
+        }
       }
-    } else {
-      // Fallback to white if semantic text is not available
-      root[colorKey].semantic.light.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
-      root[colorKey].semantic.dark.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
+      
+      // Extract label helper
+      function getPrimaryLabel(item) {
+        if (!item || !item.name) return null;
+        const m = item.name.match(/(\d+)/);
+        return m ? m[0] : null;
+      }
+      
+      let subtleLabel = null;
+      let intenseLabel = null;
+      
+      if (seedIndex !== -1) {
+        // Subtle: prefer three steps lighter (e.g., 500 -> 200)
+        if (seedIndex >= 3) {
+          subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 3]);
+        } else if (seedIndex >= 2) {
+          subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 2]);
+        } else if (seedIndex > 0) {
+          subtleLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 1]);
+        }
+        // Intense: token after seed (darker)
+        if (seedIndex < primaryScaleEntries.length - 1) {
+          intenseLabel = getPrimaryLabel(primaryScaleEntries[seedIndex + 1]);
+        }
+      }
+      
+      if (subtleLabel) {
+        root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+        root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+        root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+        root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+      }
+      
+      if (intenseLabel) {
+        root[colorKey].semantic.light.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+        root[colorKey].semantic.light.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+        root[colorKey].semantic.dark.surface.primary.surfacePrimaryIntense = { $value: semanticOverrides["surface.primary.surfacePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+        root[colorKey].semantic.dark.outline.primary.outlinePrimaryIntense = { $value: semanticOverrides["outline.primary.outlinePrimaryIntense"] || `{color.palettes.primary.${intenseLabel}}`, $type: "color" };
+      }
+
+      // textOnPrimary: check contrast between primary surface (seed) and textPrimary from neutral scale
+      // If contrast >= 4.5:1, use textPrimary, else use white (same for both themes)
+      if (!root[colorKey].semantic.light.text.onPrimary) root[colorKey].semantic.light.text.onPrimary = {};
+      if (!root[colorKey].semantic.dark.text.onPrimary) root[colorKey].semantic.dark.text.onPrimary = {};
+
+      if (semanticNeutral && semanticNeutral.text && semanticNeutral.text.primary) {
+        // Use the hex value directly from the semantic object
+        const textPrimaryHex = semanticNeutral.text.primary.hex;
+        const contrastOnPrimary = getContrastRatio(primaryData.hex, textPrimaryHex);
+        
+        if (typeof contrastOnPrimary === "number" && contrastOnPrimary >= 4.5) {
+          // Use neutral text.primary as textOnPrimary
+          root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
+          root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || semanticNeutral.text.primary.ref, $type: "color" };
+        } else {
+          // Use white
+          root[colorKey].semantic.light.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
+          root[colorKey].semantic.dark.text.onPrimary.default = { $value: semanticOverrides["text.onPrimary.default"] || "{color.seed.white}", $type: "color" };
+        }
+      } else {
+        // Fallback to white if semantic text is not available
+        root[colorKey].semantic.light.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
+        root[colorKey].semantic.dark.text.onPrimary.default = { $value: "{color.seed.white}", $type: "color" };
+      }
     }
   }
 
@@ -1732,15 +2027,16 @@ function generateSemanticFromNeutral(neutralScale, complianceMode = "AA") {
 
 function renderSemanticMapping(tokens, scale, theme = 'light') {
   const container = document.getElementById("semantic-mapping-container");
-  if (!container || !tokens || !tokens.color || !tokens.color.semantic) {
+  
+  // Get semantic tokens from either new or legacy location
+  const lightSemantic = getSemanticTokens(tokens, 'light');
+  const darkSemantic = getSemanticTokens(tokens, 'dark');
+  
+  if (!container || !lightSemantic || !darkSemantic) {
     return;
   }
 
   container.innerHTML = "";
-
-  // Show both light and dark themes
-  const lightSemantic = tokens.color.semantic.light;
-  const darkSemantic = tokens.color.semantic.dark;
   
   // Helper to extract palette reference from $value
   function extractPaletteRef(value) {
