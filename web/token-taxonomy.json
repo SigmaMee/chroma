@@ -22,31 +22,52 @@
       "primary"
     ]
   },
-  "surfaceTypes": [
-    "base",
-    "default",
-    "variant",
-    "inverted",
-    "invertedVariant"
-  ],
-  "outlineTypes": [
-    "subtle",
-    "default",
-    "strong",
-    "inverse",
-    "inverseSubtle",
-    "inverseStrong",
-    "primary",
-    "primarySubtle",
-    "primaryStrong"
-  ],
-  "textTypes": [
-    "emphasisHigh",
-    "emphasisMedium",
-    "emphasisLow",
-    "inverseHigh",
-    "inverseMedium",
-    "inverseLow",
-    "onPrimary"
-  ]
+  "surfaceTypes": {
+    "neutral": [
+      "base",
+      "default",
+      "variant",
+      "inverted",
+      "invertedVariant"
+    ],
+    "primary": [
+      "primary",
+      "primarySubtle",
+      "primaryStrong"
+    ]
+  },
+  "outlineTypes": {
+    "neutral": [
+      "subtle",
+      "default",
+      "strong",
+      "inverse",
+      "inverseSubtle",
+      "inverseStrong"
+    ],
+    "primary": [
+      "primary",
+      "primarySubtle",
+      "primaryStrong"
+    ]
+  },
+  "textTypes": {
+    "neutral": [
+      "emphasisHigh",
+      "emphasisMedium",
+      "emphasisLow",
+      "inverseHigh",
+      "inverseMedium",
+      "inverseLow"
+    ],
+    "primary": [
+      "emphasisHigh",
+      "emphasisMedium",
+      "emphasisLow",
+      "inverseHigh",
+      "inverseMedium",
+      "inverseLow",
+      "onPrimary"
+    ]
+  }
 }
