@@ -1263,6 +1263,9 @@ function renderSemanticMatrix(tokens, complianceMode, theme = 'light') {
     if (semantic.text.neutral.textInverseLow) invertedText.push({ name: "textInverseLow", hex: resolveHex(semantic.text.neutral.textInverseLow) });
   }
   if (semantic.text && semantic.text.primary) {
+    if (semantic.text.primary.textEmphasisHigh) primaryText.push({ name: "text.primary.emphasisHigh", hex: resolveHex(semantic.text.primary.textEmphasisHigh) });
+    if (semantic.text.primary.textEmphasisMedium) primaryText.push({ name: "text.primary.emphasisMedium", hex: resolveHex(semantic.text.primary.textEmphasisMedium) });
+    if (semantic.text.primary.textEmphasisLow) primaryText.push({ name: "text.primary.emphasisLow", hex: resolveHex(semantic.text.primary.textEmphasisLow) });
     if (semantic.text.primary.textOnPrimary) primaryText.push({ name: "textOnPrimary", hex: resolveHex(semantic.text.primary.textOnPrimary) });
   }
   if (semantic.outline && semantic.outline.neutral) {
@@ -2582,38 +2585,70 @@ function renderSemanticMapping(tokens, scale, theme = 'light') {
   const lightTextGroup = document.createElement("div");
   lightTextGroup.style.marginBottom = "16px";
   const lightTextTitle = document.createElement("h4");
-  lightTextTitle.textContent = "Text";
+  lightTextTitle.textContent = "Text (Neutral)";
   lightTextTitle.style.fontSize = "13px";
   lightTextTitle.style.fontWeight = "600";
   lightTextTitle.style.marginBottom = "8px";
   lightTextGroup.appendChild(lightTextTitle);
 
   if (lightSemantic && lightSemantic.text && lightSemantic.text.neutral) {
-    if (lightSemantic.text.neutral.textPrimary) {
-      lightTextGroup.appendChild(createMapping("primary", lightSemantic.text.neutral.textPrimary.$value, "text.neutral.textPrimary"));
+    if (lightSemantic.text.neutral.textEmphasisHigh) {
+      lightTextGroup.appendChild(createMapping("emphasis high", lightSemantic.text.neutral.textEmphasisHigh.$value, "text.neutral.textEmphasisHigh"));
     }
-    if (lightSemantic.text.neutral.textSecondary) {
-      lightTextGroup.appendChild(createMapping("secondary", lightSemantic.text.neutral.textSecondary.$value, "text.neutral.textSecondary"));
+    if (lightSemantic.text.neutral.textEmphasisMedium) {
+      lightTextGroup.appendChild(createMapping("emphasis medium", lightSemantic.text.neutral.textEmphasisMedium.$value, "text.neutral.textEmphasisMedium"));
     }
-    if (lightSemantic.text.neutral.textTertiary) {
-      lightTextGroup.appendChild(createMapping("tertiary", lightSemantic.text.neutral.textTertiary.$value, "text.neutral.textTertiary"));
+    if (lightSemantic.text.neutral.textEmphasisLow) {
+      lightTextGroup.appendChild(createMapping("emphasis low", lightSemantic.text.neutral.textEmphasisLow.$value, "text.neutral.textEmphasisLow"));
     }
-    if (lightSemantic.text.neutral.textPrimaryInverse) {
-      lightTextGroup.appendChild(createMapping("primary inverse", lightSemantic.text.neutral.textPrimaryInverse.$value, "text.neutral.textPrimaryInverse"));
+    if (lightSemantic.text.neutral.textInverseHigh) {
+      lightTextGroup.appendChild(createMapping("inverse high", lightSemantic.text.neutral.textInverseHigh.$value, "text.neutral.textInverseHigh"));
     }
-    if (lightSemantic.text.neutral.textSecondaryInverse) {
-      lightTextGroup.appendChild(createMapping("secondary inverse", lightSemantic.text.neutral.textSecondaryInverse.$value, "text.neutral.textSecondaryInverse"));
+    if (lightSemantic.text.neutral.textInverseMedium) {
+      lightTextGroup.appendChild(createMapping("inverse medium", lightSemantic.text.neutral.textInverseMedium.$value, "text.neutral.textInverseMedium"));
     }
-    if (lightSemantic.text.neutral.textTertiaryInverse) {
-      lightTextGroup.appendChild(createMapping("tertiary inverse", lightSemantic.text.neutral.textTertiaryInverse.$value, "text.neutral.textTertiaryInverse"));
+    if (lightSemantic.text.neutral.textInverseLow) {
+      lightTextGroup.appendChild(createMapping("inverse low", lightSemantic.text.neutral.textInverseLow.$value, "text.neutral.textInverseLow"));
     }
-  }
-
-  if (lightSemantic && lightSemantic.text && lightSemantic.text.onPrimary && lightSemantic.text.onPrimary.default) {
-    lightTextGroup.appendChild(createMapping("on primary", lightSemantic.text.onPrimary.default.$value, "text.onPrimary.default"));
   }
 
   lightThemeSection.appendChild(lightTextGroup);
+
+  // Light theme text.primary tokens
+  const lightTextPrimaryGroup = document.createElement("div");
+  lightTextPrimaryGroup.style.marginBottom = "16px";
+  const lightTextPrimaryTitle = document.createElement("h4");
+  lightTextPrimaryTitle.textContent = "Text (Primary)";
+  lightTextPrimaryTitle.style.fontSize = "13px";
+  lightTextPrimaryTitle.style.fontWeight = "600";
+  lightTextPrimaryTitle.style.marginBottom = "8px";
+  lightTextPrimaryGroup.appendChild(lightTextPrimaryTitle);
+
+  if (lightSemantic && lightSemantic.text && lightSemantic.text.primary) {
+    if (lightSemantic.text.primary.textEmphasisHigh) {
+      lightTextPrimaryGroup.appendChild(createMapping("emphasis high", lightSemantic.text.primary.textEmphasisHigh.$value, "text.primary.textEmphasisHigh"));
+    }
+    if (lightSemantic.text.primary.textEmphasisMedium) {
+      lightTextPrimaryGroup.appendChild(createMapping("emphasis medium", lightSemantic.text.primary.textEmphasisMedium.$value, "text.primary.textEmphasisMedium"));
+    }
+    if (lightSemantic.text.primary.textEmphasisLow) {
+      lightTextPrimaryGroup.appendChild(createMapping("emphasis low", lightSemantic.text.primary.textEmphasisLow.$value, "text.primary.textEmphasisLow"));
+    }
+    if (lightSemantic.text.primary.textInverseHigh) {
+      lightTextPrimaryGroup.appendChild(createMapping("inverse high", lightSemantic.text.primary.textInverseHigh.$value, "text.primary.textInverseHigh"));
+    }
+    if (lightSemantic.text.primary.textInverseMedium) {
+      lightTextPrimaryGroup.appendChild(createMapping("inverse medium", lightSemantic.text.primary.textInverseMedium.$value, "text.primary.textInverseMedium"));
+    }
+    if (lightSemantic.text.primary.textInverseLow) {
+      lightTextPrimaryGroup.appendChild(createMapping("inverse low", lightSemantic.text.primary.textInverseLow.$value, "text.primary.textInverseLow"));
+    }
+    if (lightSemantic.text.primary.textOnPrimary) {
+      lightTextPrimaryGroup.appendChild(createMapping("on primary", lightSemantic.text.primary.textOnPrimary.$value, "text.primary.textOnPrimary"));
+    }
+  }
+
+  lightThemeSection.appendChild(lightTextPrimaryGroup);
 
   // Light theme outline tokens
   const lightOutlineGroup = document.createElement("div");
@@ -2716,38 +2751,70 @@ function renderSemanticMapping(tokens, scale, theme = 'light') {
   const darkTextGroup = document.createElement("div");
   darkTextGroup.style.marginBottom = "16px";
   const darkTextTitle = document.createElement("h4");
-  darkTextTitle.textContent = "Text";
+  darkTextTitle.textContent = "Text (Neutral)";
   darkTextTitle.style.fontSize = "13px";
   darkTextTitle.style.fontWeight = "600";
   darkTextTitle.style.marginBottom = "8px";
   darkTextGroup.appendChild(darkTextTitle);
 
   if (darkSemantic && darkSemantic.text && darkSemantic.text.neutral) {
-    if (darkSemantic.text.neutral.textPrimary) {
-      darkTextGroup.appendChild(createMapping("primary", darkSemantic.text.neutral.textPrimary.$value, "text.neutral.textPrimary"));
+    if (darkSemantic.text.neutral.textEmphasisHigh) {
+      darkTextGroup.appendChild(createMapping("emphasis high", darkSemantic.text.neutral.textEmphasisHigh.$value, "text.neutral.textEmphasisHigh"));
     }
-    if (darkSemantic.text.neutral.textSecondary) {
-      darkTextGroup.appendChild(createMapping("secondary", darkSemantic.text.neutral.textSecondary.$value, "text.neutral.textSecondary"));
+    if (darkSemantic.text.neutral.textEmphasisMedium) {
+      darkTextGroup.appendChild(createMapping("emphasis medium", darkSemantic.text.neutral.textEmphasisMedium.$value, "text.neutral.textEmphasisMedium"));
     }
-    if (darkSemantic.text.neutral.textTertiary) {
-      darkTextGroup.appendChild(createMapping("tertiary", darkSemantic.text.neutral.textTertiary.$value, "text.neutral.textTertiary"));
+    if (darkSemantic.text.neutral.textEmphasisLow) {
+      darkTextGroup.appendChild(createMapping("emphasis low", darkSemantic.text.neutral.textEmphasisLow.$value, "text.neutral.textEmphasisLow"));
     }
-    if (darkSemantic.text.neutral.textPrimaryInverse) {
-      darkTextGroup.appendChild(createMapping("primary inverse", darkSemantic.text.neutral.textPrimaryInverse.$value, "text.neutral.textPrimaryInverse"));
+    if (darkSemantic.text.neutral.textInverseHigh) {
+      darkTextGroup.appendChild(createMapping("inverse high", darkSemantic.text.neutral.textInverseHigh.$value, "text.neutral.textInverseHigh"));
     }
-    if (darkSemantic.text.neutral.textSecondaryInverse) {
-      darkTextGroup.appendChild(createMapping("secondary inverse", darkSemantic.text.neutral.textSecondaryInverse.$value, "text.neutral.textSecondaryInverse"));
+    if (darkSemantic.text.neutral.textInverseMedium) {
+      darkTextGroup.appendChild(createMapping("inverse medium", darkSemantic.text.neutral.textInverseMedium.$value, "text.neutral.textInverseMedium"));
     }
-    if (darkSemantic.text.neutral.textTertiaryInverse) {
-      darkTextGroup.appendChild(createMapping("tertiary inverse", darkSemantic.text.neutral.textTertiaryInverse.$value, "text.neutral.textTertiaryInverse"));
+    if (darkSemantic.text.neutral.textInverseLow) {
+      darkTextGroup.appendChild(createMapping("inverse low", darkSemantic.text.neutral.textInverseLow.$value, "text.neutral.textInverseLow"));
     }
-  }
-
-  if (darkSemantic && darkSemantic.text && darkSemantic.text.onPrimary && darkSemantic.text.onPrimary.default) {
-    darkTextGroup.appendChild(createMapping("on primary", darkSemantic.text.onPrimary.default.$value, "text.onPrimary.default"));
   }
 
   darkThemeSection.appendChild(darkTextGroup);
+
+  // Dark theme text.primary tokens
+  const darkTextPrimaryGroup = document.createElement("div");
+  darkTextPrimaryGroup.style.marginBottom = "16px";
+  const darkTextPrimaryTitle = document.createElement("h4");
+  darkTextPrimaryTitle.textContent = "Text (Primary)";
+  darkTextPrimaryTitle.style.fontSize = "13px";
+  darkTextPrimaryTitle.style.fontWeight = "600";
+  darkTextPrimaryTitle.style.marginBottom = "8px";
+  darkTextPrimaryGroup.appendChild(darkTextPrimaryTitle);
+
+  if (darkSemantic && darkSemantic.text && darkSemantic.text.primary) {
+    if (darkSemantic.text.primary.textEmphasisHigh) {
+      darkTextPrimaryGroup.appendChild(createMapping("emphasis high", darkSemantic.text.primary.textEmphasisHigh.$value, "text.primary.textEmphasisHigh"));
+    }
+    if (darkSemantic.text.primary.textEmphasisMedium) {
+      darkTextPrimaryGroup.appendChild(createMapping("emphasis medium", darkSemantic.text.primary.textEmphasisMedium.$value, "text.primary.textEmphasisMedium"));
+    }
+    if (darkSemantic.text.primary.textEmphasisLow) {
+      darkTextPrimaryGroup.appendChild(createMapping("emphasis low", darkSemantic.text.primary.textEmphasisLow.$value, "text.primary.textEmphasisLow"));
+    }
+    if (darkSemantic.text.primary.textInverseHigh) {
+      darkTextPrimaryGroup.appendChild(createMapping("inverse high", darkSemantic.text.primary.textInverseHigh.$value, "text.primary.textInverseHigh"));
+    }
+    if (darkSemantic.text.primary.textInverseMedium) {
+      darkTextPrimaryGroup.appendChild(createMapping("inverse medium", darkSemantic.text.primary.textInverseMedium.$value, "text.primary.textInverseMedium"));
+    }
+    if (darkSemantic.text.primary.textInverseLow) {
+      darkTextPrimaryGroup.appendChild(createMapping("inverse low", darkSemantic.text.primary.textInverseLow.$value, "text.primary.textInverseLow"));
+    }
+    if (darkSemantic.text.primary.textOnPrimary) {
+      darkTextPrimaryGroup.appendChild(createMapping("on primary", darkSemantic.text.primary.textOnPrimary.$value, "text.primary.textOnPrimary"));
+    }
+  }
+
+  darkThemeSection.appendChild(darkTextPrimaryGroup);
 
   // Dark theme outline tokens
   const darkOutlineGroup = document.createElement("div");
