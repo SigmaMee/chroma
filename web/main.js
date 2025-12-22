@@ -395,7 +395,8 @@ const matrixNote = document.getElementById("matrix-note");
 const primaryMatrixGrid = document.getElementById("primary-matrix-grid");
 const primaryMatrixPassCount = document.getElementById("primary-matrix-pass-count");
 const primaryMatrixNote = document.getElementById("primary-matrix-note");
-const complianceLevel = document.getElementById("complianceLevel");
+const complianceBtns = document.querySelectorAll(".compliance-btn");
+const getComplianceMode = () => document.querySelector(".compliance-btn.active")?.dataset.level || "AA";
 const output = document.getElementById("output");
 const generateBtn = document.getElementById("generate");
 const copyBtn = document.getElementById("copy");
@@ -1056,7 +1057,7 @@ function renderMatrix(scale) {
     ...colors
   ];
   
-  const level = complianceLevel.value;
+  const level = getComplianceMode();
   const normalThreshold = level === "AAA" ? 7 : 4.5;
   const largeThreshold = level === "AAA" ? 4.5 : 3;
   
@@ -1134,7 +1135,7 @@ function renderPrimaryColorMatrix(primaryScale, neutralScale) {
     return;
   }
 
-  const level = complianceLevel.value;
+  const level = getComplianceMode();
   const normalThreshold = level === "AAA" ? 7 : 4.5;
   const largeThreshold = level === "AAA" ? 4.5 : 3;
 
@@ -2908,7 +2909,7 @@ function generateTokens() {
       currentPrimaryScale = Array.isArray(primaryScale) ? primaryScale.slice() : [];
       let semantic = null;
       if (neutralScale.length > 0) {
-        const complianceMode = complianceLevel ? complianceLevel.value : "AA";
+        const complianceMode = getComplianceMode();
         semantic = generateSemanticFromNeutral(neutralScale, complianceMode);
       }
 
@@ -2917,7 +2918,7 @@ function generateTokens() {
 
       // Render semantic tokens preview
       if (semantic) {
-        const complianceMode = complianceLevel ? complianceLevel.value : "AA";
+        const complianceMode = getComplianceMode();
         // Pass combined scale (neutral + primary) so preview can extract primary values
         renderSemanticPreview(semantic, complianceMode, tokens, scale.concat(primaryScale), currentTheme);
         // Render semantic contrast matrix
@@ -3103,20 +3104,32 @@ formatButtons.forEach((button) => {
   });
 });
 
-complianceLevel.addEventListener("change", () => {
-  const primary = normalizeHex(primaryInput.value);
-  const saturation = clamp(Number(satInput.value) || 0, 0, 30);
-  const derived = deriveGreyscaleColor(primary, saturation, currentTintColorMode);
-  if (derived) {
-    const gScale = generateGreyscaleScale(derived);
-    renderMatrix(gScale);
-    // Also render primary color matrix
-    const primaryData = { hex: primary, hsl: rgbToHsl(...Object.values(hexToRgb(primary) || {})), saturation: 1 };
-    const primaryScale = generatePrimaryScale(primaryData);
-    renderPrimaryColorMatrix(primaryScale, gScale);
-  } else {
-    renderMatrix();
-  }
+complianceBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    complianceBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    
+    const primary = normalizeHex(primaryInput.value);
+    const saturation = clamp(Number(satInput.value) || 0, 0, 30);
+    const derived = deriveGreyscaleColor(primary, saturation, currentTintColorMode);
+    if (derived) {
+      const gScale = generateGreyscaleScale(derived);
+      renderMatrix(gScale);
+      // Also render primary color matrix
+      const primaryData = { hex: primary, hsl: rgbToHsl(...Object.values(hexToRgb(primary) || {})), saturation: 1 };
+      const primaryScale = generatePrimaryScale(primaryData);
+      renderPrimaryColorMatrix(primaryScale, gScale);
+    } else {
+      renderMatrix();
+    }
+    
+    // Update semantic matrix if tokens exist
+    if (currentTokens) {
+      if (wcagTab.classList.contains("active")) {
+        renderSemanticMatrix(currentTokens, getComplianceMode(), currentTheme);
+      }
+    }
+  });
 });
 
 copyBtn.addEventListener("click", async () => {

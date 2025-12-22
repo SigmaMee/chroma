@@ -150,6 +150,42 @@ header p {
   white-space: nowrap;
 }
 
+.compliance-toggle-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.compliance-toggle-wrapper label {
+  font-size: 0.75rem;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.compliance-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.compliance-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  background: transparent !important;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.compliance-btn.active {
+  background: var(--accent) !important;
+  color: #05060a;
+}
+
 label {
   font-weight: 600;
   display: block;
