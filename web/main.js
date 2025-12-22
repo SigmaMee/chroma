@@ -2002,9 +2002,9 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     }
     
     // All primary tokens derive from the baseline (lightest color meeting AA with surfaceVariant)
-    // Low emphasis: 2 steps lighter than baseline
-    // Medium emphasis: baseline itself
-    // High emphasis: 2 steps darker than baseline
+    // Low emphasis (subtle): 4 steps lighter than baseline (e.g., 600→200)
+    // Medium emphasis: baseline itself (e.g., 600)
+    // High emphasis (strong): 1 step darker than baseline (e.g., 600→700)
     
     let lowEmphasisLabel = null;
     let mediumEmphasisLabel = null;
@@ -2014,11 +2014,11 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       // Medium = baseline (lightest passing AA)
       mediumEmphasisLabel = getPrimaryLabel(baselineColor);
       
-      // Low = 2 steps lighter (lower index)
-      lowEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex - 2]);
+      // Low = 4 steps lighter (lower index)
+      lowEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex - 4]);
       
-      // High = 2 steps darker (higher index)
-      highEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex + 2]);
+      // High = 1 step darker (higher index)
+      highEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex + 1]);
     }
     
     // OUTLINE PRIMARY - all use the same low/medium/high values
@@ -2087,9 +2087,9 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       }
       
       if (inverseBaselineIndex !== -1) {
-        const inverseLowLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex - 2]);
+        const inverseLowLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex - 4]);
         const inverseMediumLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex]);
-        const inverseHighLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex + 2]);
+        const inverseHighLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex + 1]);
         
         if (inverseLowLabel) {
           root[colorKey].semantic.light.text.primary.textInverseLow = { $value: semanticOverrides["text.primary.textInverseLow"] || `{color.palettes.primary.${inverseLowLabel}}`, $type: "color" };
