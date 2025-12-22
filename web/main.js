@@ -2088,7 +2088,8 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     if (!root[colorKey].semantic.dark.text.primary) root[colorKey].semantic.dark.text.primary = {};
     
     // Generate semantic tokens from primary scale similar to neutral
-    const primarySemanticTokens = generateSemanticFromPrimary(primaryScaleEntries, complianceMode);
+    // Use AA as default compliance mode (matches the default in generateSemanticFromNeutral)
+    const primarySemanticTokens = generateSemanticFromPrimary(primaryScaleEntries, "AA");
     
     if (primarySemanticTokens) {
       // Light theme: use primary palette text tokens (darker colors for light backgrounds)
