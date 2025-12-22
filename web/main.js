@@ -2016,7 +2016,7 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
     let highEmphasisLabel = null;
     
     if (baselineIndex !== -1) {
-      // Medium = baseline (lightest passing AA)
+      // Medium = baseline (lightest passing compliance threshold)
       mediumEmphasisLabel = getPrimaryLabel(baselineColor);
       
       // Low = 4 steps lighter (lower index)
@@ -2024,6 +2024,12 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
       
       // High = 1 step darker (higher index)
       highEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex + 1]);
+      
+      console.log('Primary token assignments:', {
+        subtle: lowEmphasisLabel,
+        medium: mediumEmphasisLabel,
+        strong: highEmphasisLabel
+      });
     }
     
     // OUTLINE PRIMARY - all use the same low/medium/high values
