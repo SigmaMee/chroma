@@ -2108,12 +2108,7 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       }
     }
     
-    // textOnPrimary: check contrast between primary surface (medium emphasis = baseline) and textEmphasisHigh from neutral scaleimary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
-        }
-      }
-    }
-    
-    // textOnPrimary: check contrast between primary surface (seed) and textEmphasisHigh from neutral scale
+    // textOnPrimary: check contrast between primary surface (medium emphasis = baseline) and textEmphasisHigh from neutral scale
     // If contrast >= 4.5:1, use textEmphasisHigh, else use white (same for both themes)
     if (semanticNeutral && semanticNeutral.text && semanticNeutral.text.primary) {
       // Use the hex value directly from the semantic object
