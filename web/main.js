@@ -1956,7 +1956,7 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
     
     // Helper to find color that meets contrast threshold against surface variant
     function findOutlineColorFromPrimary(backgroundHex, startIdx, direction = 'darker') {
-      const outlineThreshold = 3.0;
+      const outlineThreshold = 4.5; // AA threshold - used for all primary tokens
       
       if (direction === 'darker') {
         // Search toward darker colors (higher indices)
@@ -1980,176 +1980,129 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral) 
       return seedIndex >= 0 ? { index: seedIndex, color: primaryScaleEntries[seedIndex] } : null;
     }
     
-    // Check if seed primary meets 3:1 contrast with surface variant for outline
-    let outlineDefaultIndex = seedIndex;
-    let outlineDefaultColor = seedIndex >= 0 ? primaryScaleEntries[seedIndex] : null;
+    // Find the lightest primary color that meets AA (4.5:1) contrast with surface variant
+    // This becomes the baseline for ALL primary tokens (surface, outline, text)
+    let baselineIndex = -1;
+    let baselineColor = null;
     
     if (semanticNeutral && semanticNeutral.surfaceVariant) {
       const surfaceVariantHex = semanticNeutral.surfaceVariant.hex;
-      const contrastWithSeed = getContrastRatio(surfaceVariantHex, primaryData.hex);
       
-      // If seed doesn't meet threshold, find a color that does
-      if (typeof contrastWithSeed !== "number" || contrastWithSeed < 3.0) {
-        // Try searching darker first (likely for light backgrounds)
-        const result = findOutlineColorFromPrimary(surfaceVariantHex, seedIndex, 'darker');
-        if (result) {
-          outlineDefaultIndex = result.index;
-          outlineDefaultColor = result.color;
+      // Scan from light to dark to find first passing color (lightest that meets AA)
+      for (let i = 0; i < primaryScaleEntries.length; i++) {
+        const ratio = getContrastRatio(surfaceVariantHex, primaryScaleEntries[i].hex);
+        if (typeof ratio === "number" && ratio >= 4.5) {
+          baselineIndex = i;
+          baselineColor = primaryScaleEntries[i];
+          break;
         }
       }
     }
     
-    // Set outline primary default from the validated color
-    if (outlineDefaultColor) {
-      const defaultLabel = getPrimaryLabel(outlineDefaultColor);
-      const defaultRef = defaultLabel ? `{color.palettes.primary.${defaultLabel}}` : "{color.seed.primary}";
-      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || defaultRef, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || defaultRef, $type: "color" };
-    } else {
-      // Fallback to seed
-      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || "{color.seed.primary}", $type: "color" };
+    // If no color meets AA threshold, fall back to seed
+    if (baselineIndex === -1) {
+      baselineIndex = seedIndex;
+      baselineColor = seedIndex >= 0 ? primaryScaleEntries[seedIndex] : null;
     }
     
-    let subtleLabel = null;
-    let strongLabel = null;
+    // All primary tokens derive from the baseline (lightest color meeting AA with surfaceVariant)
+    // Low emphasis: 2 steps lighter than baseline
+    // Medium emphasis: baseline itself
+    // High emphasis: 2 steps darker than baseline
     
-    // Derive subtle and strong outline from the validated default outline index
-    let outlineSubtleLabel = null;
-    let outlineStrongLabel = null;
+    let lowEmphasisLabel = null;
+    let mediumEmphasisLabel = null;
+    let highEmphasisLabel = null;
     
-    if (outlineDefaultIndex !== -1) {
-      // Subtle outline: 2 steps lighter (lower index)
-      outlineSubtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 2]);
+    if (baselineIndex !== -1) {
+      // Medium = baseline (lightest passing AA)
+      mediumEmphasisLabel = getPrimaryLabel(baselineColor);
       
-      // Strong outline: 2 steps darker (higher index)
-      outlineStrongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 2]);
+      // Low = 2 steps lighter (lower index)
+      lowEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex - 2]);
+      
+      // High = 2 steps darker (higher index)
+      highEmphasisLabel = getPrimaryLabel(primaryScaleEntries[baselineIndex + 2]);
     }
     
-    if (outlineSubtleLabel) {
-      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${outlineSubtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${outlineSubtleLabel}}`, $type: "color" };
-    } else {
-      // Fallback to seed if no subtle variant found
-      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || "{color.seed.primary}", $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || "{color.seed.primary}", $type: "color" };
+    // OUTLINE PRIMARY - all use the same low/medium/high values
+    if (mediumEmphasisLabel) {
+      root[colorKey].semantic.light.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimary = { $value: semanticOverrides["outline.primary.outlinePrimary"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
     }
     
-    if (outlineStrongLabel) {
-      root[colorKey].semantic.light.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || `{color.palettes.primary.${outlineStrongLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || `{color.palettes.primary.${outlineStrongLabel}}`, $type: "color" };
-    } else {
-      // Fallback to seed if no strong variant found
-      root[colorKey].semantic.light.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || "{color.seed.primary}", $type: "color" };
-      root[colorKey].semantic.dark.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || "{color.seed.primary}", $type: "color" };
+    if (lowEmphasisLabel) {
+      root[colorKey].semantic.light.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimarySubtle = { $value: semanticOverrides["outline.primary.outlinePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
     }
     
-    // Surface primary variants: derive from validated outline default index for consistency
-    // This ensures surface variants are based on the same contrast-validated starting point as outlines
-    if (outlineDefaultIndex !== -1) {
-      // Subtle: three steps lighter than the contrast-validated outline color
-      subtleLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex - 3]);
-      // Strong: one step darker than the contrast-validated outline color
-      strongLabel = getPrimaryLabel(primaryScaleEntries[outlineDefaultIndex + 1]);
+    if (highEmphasisLabel) {
+      root[colorKey].semantic.light.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.outline.primary.outlinePrimaryStrong = { $value: semanticOverrides["outline.primary.outlinePrimaryStrong"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
     }
     
-    if (subtleLabel) {
-      root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${subtleLabel}}`, $type: "color" };
+    // SURFACE PRIMARY - same low/medium/high values
+    if (lowEmphasisLabel) {
+      root[colorKey].semantic.light.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimarySubtle = { $value: semanticOverrides["surface.primary.surfacePrimarySubtle"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
     }
     
-    if (strongLabel) {
-      root[colorKey].semantic.light.surface.primary.surfacePrimaryStrong = { $value: semanticOverrides["surface.primary.surfacePrimaryStrong"] || `{color.palettes.primary.${strongLabel}}`, $type: "color" };
-      root[colorKey].semantic.dark.surface.primary.surfacePrimaryStrong = { $value: semanticOverrides["surface.primary.surfacePrimaryStrong"] || `{color.palettes.primary.${strongLabel}}`, $type: "color" };
+    if (highEmphasisLabel) {
+      root[colorKey].semantic.light.surface.primary.surfacePrimaryStrong = { $value: semanticOverrides["surface.primary.surfacePrimaryStrong"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.surface.primary.surfacePrimaryStrong = { $value: semanticOverrides["surface.primary.surfacePrimaryStrong"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
     }
 
-    // Generate text.primary tokens using the same contrast-validated approach as outlines
-    // Initialize text.primary for both themes
+    // TEXT PRIMARY - same low/medium/high values for both themes
     if (!root[colorKey].semantic.light.text.primary) root[colorKey].semantic.light.text.primary = {};
     if (!root[colorKey].semantic.dark.text.primary) root[colorKey].semantic.dark.text.primary = {};
     
-    // Find text colors that meet WCAG threshold against surfaceVariant, starting from the validated outline index
-    // This ensures text emphasis levels are derived from the same contrast-validated baseline
-    if (semanticNeutral && semanticNeutral.surfaceVariant && outlineDefaultIndex !== -1) {
-      const surfaceVariantHex = semanticNeutral.surfaceVariant.hex;
-      const textThreshold = 4.5; // AA compliance for text
+    if (lowEmphasisLabel) {
+      root[colorKey].semantic.light.text.primary.textEmphasisLow = { $value: semanticOverrides["text.primary.textEmphasisLow"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.text.primary.textInverseLow = { $value: semanticOverrides["text.primary.textEmphasisLow"] || `{color.palettes.primary.${lowEmphasisLabel}}`, $type: "color" };
+    }
+    
+    if (mediumEmphasisLabel) {
+      root[colorKey].semantic.light.text.primary.textEmphasisMedium = { $value: semanticOverrides["text.primary.textEmphasisMedium"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.text.primary.textInverseMedium = { $value: semanticOverrides["text.primary.textEmphasisMedium"] || `{color.palettes.primary.${mediumEmphasisLabel}}`, $type: "color" };
+    }
+    
+    if (highEmphasisLabel) {
+      root[colorKey].semantic.light.text.primary.textEmphasisHigh = { $value: semanticOverrides["text.primary.textEmphasisHigh"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
+      root[colorKey].semantic.dark.text.primary.textInverseHigh = { $value: semanticOverrides["text.primary.textEmphasisHigh"] || `{color.palettes.primary.${highEmphasisLabel}}`, $type: "color" };
+    }
+    
+    // For dark theme, find inverse colors (light text on dark background)
+    if (semanticNeutral && semanticNeutral.surfaceInverted) {
+      const darkBgHex = semanticNeutral.surfaceInverted.hex;
       
-      // Light theme: scan from the outline default index toward darker colors for emphasis hierarchy
-      let emphasisLowIndex = -1;
-      let emphasisMediumIndex = -1;
-      let emphasisHighIndex = -1;
-      
-      // Find first three colors meeting text threshold, scanning from outline default toward darker
-      const passingIndices = [];
-      for (let i = outlineDefaultIndex; i < primaryScaleEntries.length && passingIndices.length < 3; i++) {
-        const ratio = getContrastRatio(surfaceVariantHex, primaryScaleEntries[i].hex);
-        if (typeof ratio === "number" && ratio >= textThreshold) {
-          passingIndices.push(i);
-        }
-      }
-      
-      if (passingIndices.length >= 3) {
-        emphasisLowIndex = passingIndices[0];    // lightest (first passing)
-        emphasisMediumIndex = passingIndices[1]; // middle
-        emphasisHighIndex = passingIndices[2];   // darkest
-      } else if (passingIndices.length === 2) {
-        emphasisLowIndex = passingIndices[0];
-        emphasisMediumIndex = passingIndices[0];
-        emphasisHighIndex = passingIndices[1];
-      } else if (passingIndices.length === 1) {
-        emphasisLowIndex = emphasisMediumIndex = emphasisHighIndex = passingIndices[0];
-      }
-      
-      if (emphasisHighIndex !== -1) {
-        const highLabel = getPrimaryLabel(primaryScaleEntries[emphasisHighIndex]);
-        if (highLabel) {
-          root[colorKey].semantic.light.text.primary.textEmphasisHigh = { $value: semanticOverrides["text.primary.textEmphasisHigh"] || `{color.palettes.primary.${highLabel}}`, $type: "color" };
-          root[colorKey].semantic.dark.text.primary.textInverseHigh = { $value: semanticOverrides["text.primary.textEmphasisHigh"] || `{color.palettes.primary.${highLabel}}`, $type: "color" };
-        }
-      }
-      
-      if (emphasisMediumIndex !== -1) {
-        const mediumLabel = getPrimaryLabel(primaryScaleEntries[emphasisMediumIndex]);
-        if (mediumLabel) {
-          root[colorKey].semantic.light.text.primary.textEmphasisMedium = { $value: semanticOverrides["text.primary.textEmphasisMedium"] || `{color.palettes.primary.${mediumLabel}}`, $type: "color" };
-          root[colorKey].semantic.dark.text.primary.textInverseMedium = { $value: semanticOverrides["text.primary.textEmphasisMedium"] || `{color.palettes.primary.${mediumLabel}}`, $type: "color" };
-        }
-      }
-      
-      if (emphasisLowIndex !== -1) {
-        const lowLabel = getPrimaryLabel(primaryScaleEntries[emphasisLowIndex]);
-        if (lowLabel) {
-          root[colorKey].semantic.light.text.primary.textEmphasisLow = { $value: semanticOverrides["text.primary.textEmphasisLow"] || `{color.palettes.primary.${lowLabel}}`, $type: "color" };
-          root[colorKey].semantic.dark.text.primary.textInverseLow = { $value: semanticOverrides["text.primary.textEmphasisLow"] || `{color.palettes.primary.${lowLabel}}`, $type: "color" };
-        }
-      }
-      
-      // For dark theme inverse colors (light text on dark bg), scan from light to dark
-      const darkBgHex = semanticNeutral.surfaceInverted ? semanticNeutral.surfaceInverted.hex : "#1A1A1A";
-      const passingInverseIndices = [];
-      for (let i = 0; i < primaryScaleEntries.length && passingInverseIndices.length < 3; i++) {
+      // Find lightest color meeting AA threshold for dark backgrounds
+      let inverseBaselineIndex = -1;
+      for (let i = 0; i < primaryScaleEntries.length; i++) {
         const ratio = getContrastRatio(darkBgHex, primaryScaleEntries[i].hex);
-        if (typeof ratio === "number" && ratio >= textThreshold) {
-          passingInverseIndices.push(i);
+        if (typeof ratio === "number" && ratio >= 4.5) {
+          inverseBaselineIndex = i;
+          break;
         }
       }
       
-      if (passingInverseIndices.length >= 3) {
-        const inverseHighLabel = getPrimaryLabel(primaryScaleEntries[passingInverseIndices[0]]);
-        const inverseMediumLabel = getPrimaryLabel(primaryScaleEntries[passingInverseIndices[1]]);
-        const inverseLowLabel = getPrimaryLabel(primaryScaleEntries[passingInverseIndices[2]]);
+      if (inverseBaselineIndex !== -1) {
+        const inverseLowLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex - 2]);
+        const inverseMediumLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex]);
+        const inverseHighLabel = getPrimaryLabel(primaryScaleEntries[inverseBaselineIndex + 2]);
         
-        if (inverseHighLabel) {
-          root[colorKey].semantic.light.text.primary.textInverseHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
-          root[colorKey].semantic.dark.text.primary.textEmphasisHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
+        if (inverseLowLabel) {
+          root[colorKey].semantic.light.text.primary.textInverseLow = { $value: semanticOverrides["text.primary.textInverseLow"] || `{color.palettes.primary.${inverseLowLabel}}`, $type: "color" };
+          root[colorKey].semantic.dark.text.primary.textEmphasisLow = { $value: semanticOverrides["text.primary.textInverseLow"] || `{color.palettes.primary.${inverseLowLabel}}`, $type: "color" };
         }
+        
         if (inverseMediumLabel) {
           root[colorKey].semantic.light.text.primary.textInverseMedium = { $value: semanticOverrides["text.primary.textInverseMedium"] || `{color.palettes.primary.${inverseMediumLabel}}`, $type: "color" };
           root[colorKey].semantic.dark.text.primary.textEmphasisMedium = { $value: semanticOverrides["text.primary.textInverseMedium"] || `{color.palettes.primary.${inverseMediumLabel}}`, $type: "color" };
         }
-        if (inverseLowLabel) {
-          root[colorKey].semantic.light.text.primary.textInverseLow = { $value: semanticOverrides["text.primary.textInverseLow"] || `{color.palettes.primary.${inverseLowLabel}}`, $type: "color" };
-          root[colorKey].semantic.dark.text.primary.textEmphasisLow = { $value: semanticOverrides["text.primary.textInverseLow"] || `{color.palettes.primary.${inverseLowLabel}}`, $type: "color" };
+        
+        if (inverseHighLabel) {
+          root[colorKey].semantic.light.text.primary.textInverseHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
+          root[colorKey].semantic.dark.text.primary.textEmphasisHigh = { $value: semanticOverrides["text.primary.textInverseHigh"] || `{color.palettes.primary.${inverseHighLabel}}`, $type: "color" };
         }
       }
     }
