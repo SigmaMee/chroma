@@ -177,6 +177,11 @@ const primaryColorPicker = document.getElementById("primaryColorPicker");
 const satInput = document.getElementById("greyscaleSaturationValue");
 const formatSelect = document.getElementById("format");
 
+// Tint color picker elements
+const tintColorPicker = document.getElementById("tintColorPicker");
+const tintHexInput = document.getElementById("tintHexInput");
+const tintSwatch = document.getElementById("tintSwatch");
+
 // Recently used colors
 const recentColorsContainer = document.getElementById("recentColors");
 const recentColorsGrid = document.getElementById("recentColorsGrid");
@@ -335,7 +340,7 @@ let tintAmounts = {
   high: 0,
 };
 let currentTintLevel = "low";
-let currentTintColorMode = "primary";
+let currentTintColor = "#3366FF"; // Default tint color (same as primary)
 const semanticOverrides = {};
 let currentTheme = 'light'; // Track current theme for semantic preview
 let currentOutputFormat = 'json'; // Track current output format
@@ -545,8 +550,8 @@ function hslToRgb(h, s, l) {
   };
 }
 
-function deriveGreyscaleColor(primaryHex, saturationPercent, tintMode = "primary") {
-  const normalized = normalizeHex(primaryHex);
+function deriveGreyscaleColor(tintColorHex, saturationPercent) {
+  const normalized = normalizeHex(tintColorHex);
   if (!normalized) {
     return null;
   }
@@ -554,26 +559,7 @@ function deriveGreyscaleColor(primaryHex, saturationPercent, tintMode = "primary
   if (!rgb) {
     return null;
   }
-  let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-  
-  // Apply hue shift based on harmony mode
-  let hueShift = 0;
-  if (tintMode === "complimentary") {
-    hueShift = 180;
-  } else if (tintMode === "analogous-plus") {
-    hueShift = 30;
-  } else if (tintMode === "analogous-minus") {
-    hueShift = -30;
-  } else if (tintMode === "triadic-plus") {
-    hueShift = 120;
-  } else if (tintMode === "triadic-minus") {
-    hueShift = -120;
-  }
-  // primary mode has no shift (hueShift = 0)
-  
-  if (hueShift !== 0) {
-    hsl = { ...hsl, h: (hsl.h + hueShift + 360) % 360 };
-  }
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
   
   const saturation = clamp(Number(saturationPercent) / 100 || 0, 0, 0.3);
   const derivedRgb = hslToRgb(hsl.h, saturation, hsl.l);
@@ -1688,7 +1674,7 @@ function renderSemanticPreview(semantic, complianceMode, tokens, scale, theme = 
 function updateDerivedPreview() {
   const normalized = normalizeHex(primaryInput.value);
   primarySwatch.style.background = normalized || "#222";
-  const derived = deriveGreyscaleColor(primaryInput.value, satInput.value, currentTintColorMode);
+  const derived = deriveGreyscaleColor(currentTintColor, satInput.value);
   if (!derived) {
     derivedHexInput.value = "";
     derivedSwatch.style.background = "#222";
@@ -1697,47 +1683,10 @@ function updateDerivedPreview() {
   derivedHexInput.value = derived.hex;
   derivedSwatch.style.background = derived.hex;
   
-  // Update harmony card swatches with current primary color
-  updateHarmonySwatches();
-  
   return derived;
 }
 
-function updateHarmonySwatches() {
-  const primaryColor = primaryInput.value;
-  
-  // Define all harmony modes and their hue shifts
-  const modes = [
-    { selector: '[data-mode="complimentary"]', shift: 180 },
-    { selector: '[data-mode="analogous"][data-variant="plus"]', shift: 30 },
-    { selector: '[data-mode="analogous"][data-variant="minus"]', shift: -30 },
-    { selector: '[data-mode="triadic"][data-variant="plus"]', shift: 120 },
-    { selector: '[data-mode="triadic"][data-variant="minus"]', shift: -120 },
-    { selector: '[data-mode="primary"]', shift: 0 },
-  ];
-  
-  modes.forEach(({ selector, shift }) => {
-    const swatch = document.querySelector(selector);
-    if (swatch) {
-      const normalized = normalizeHex(primaryColor);
-      if (normalized) {
-        const rgb = hexToRgb(normalized);
-        if (rgb) {
-          let hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-          // Apply hue shift but keep original S and L from the seed color
-          hsl = { ...hsl, h: (hsl.h + shift + 360) % 360 };
-          // Use the seed's original saturation and lightness, not clamped
-          const swatchRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-          const swatchHex = rgbToHex(swatchRgb.r, swatchRgb.g, swatchRgb.b);
-          const swatchColor = swatch.querySelector('.swatch-color');
-          if (swatchColor) {
-            swatchColor.style.background = swatchHex;
-          }
-        }
-      }
-    }
-  });
-}
+
 
 function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, complianceMode = "AA") {
   const safePrefix = (prefix || "")
@@ -3056,39 +3005,49 @@ if (primaryInput) {
   }, 300));
 }
 
-// Harmony mode swatch listeners
-function initHarmonySwatches() {
-  const harmonySwatches = document.querySelectorAll(".harmony-swatch");
-  harmonySwatches.forEach((swatch) => {
-    swatch.addEventListener("click", (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      // Remove active class from all swatches
-      harmonySwatches.forEach((s) => s.classList.remove("active"));
-      // Add active class to clicked swatch
-      event.currentTarget.classList.add("active");
-      
-      // Update current tint color mode based on data attributes
-      const mode = event.currentTarget.dataset.mode;
-      const variant = event.currentTarget.dataset.variant;
-      
-      // Map mode + variant to tintMode string
-      if (mode === "primary") {
-        currentTintColorMode = "primary";
-      } else if (mode === "complimentary") {
-        currentTintColorMode = "complimentary";
-      } else if (mode === "analogous") {
-        currentTintColorMode = variant === "plus" ? "analogous-plus" : "analogous-minus";
-      } else if (mode === "triadic") {
-        currentTintColorMode = variant === "plus" ? "triadic-plus" : "triadic-minus";
-      }
-      
-      // Generate tokens
-      generateTokens();
-    });
+// Tint color picker event handlers
+if (tintColorPicker && tintSwatch) {
+  // Open color picker when swatch is clicked
+  tintSwatch.addEventListener("click", () => {
+    tintColorPicker.click();
+  });
+
+  // Update text input and swatch when color picker changes
+  tintColorPicker.addEventListener("input", (e) => {
+    const color = e.target.value.toUpperCase();
+    if (tintHexInput) tintHexInput.value = color;
+    currentTintColor = color;
+    generateTokens();
   });
 }
 
+if (tintHexInput) {
+  tintHexInput.addEventListener("input", Performance.debounce(() => {
+    const normalized = normalizeHex(tintHexInput.value);
+    if (!normalized) {
+      tintHexInput.classList.add('error');
+      setTimeout(() => tintHexInput.classList.remove('error'), 2000);
+      return;
+    }
+    
+    if (tintColorPicker) {
+      tintColorPicker.value = normalized;
+    }
+    tintHexInput.value = normalized;
+    currentTintColor = normalized;
+    
+    // Clear contrast cache when color changes
+    Performance.clearCache();
+    
+    try {
+      generateTokens();
+    } catch (error) {
+      ErrorHandler.handleGenerationError(error);
+    }
+  }, 300));
+}
+
+// Harmony mode swatch listeners
 // Tint amount switch listeners
 function initTintAmountSwitches() {
   const tintAmountSwitches = document.querySelectorAll("#tintAmountSwitch-low, #tintAmountSwitch-mid, #tintAmountSwitch-high");
@@ -3268,12 +3227,10 @@ initWelcomePage();
 if (typeof initConfig === 'function') {
   initConfig().then(() => {
     // Config has loaded and rebuilt the buttons, now attach event listeners
-    initHarmonySwatches();
     initTintAmountSwitches();
   });
 } else {
   // If no config-loader, just initialize normally
-  initHarmonySwatches();
   initTintAmountSwitches();
 }
 
@@ -3289,6 +3246,12 @@ const _initialPrimary = normalizeHex(primaryInput && primaryInput.value ? primar
 if (_initialPrimary) {
   if (primaryInput) primaryInput.value = _initialPrimary;
   if (primaryColorPicker) primaryColorPicker.value = _initialPrimary;
+  
+  // Initialize tint color to match primary color
+  currentTintColor = _initialPrimary;
+  if (tintHexInput) tintHexInput.value = _initialPrimary;
+  if (tintColorPicker) tintColorPicker.value = _initialPrimary;
+  if (tintSwatch) tintSwatch.style.background = _initialPrimary;
 }
 
 // Keyboard shortcuts

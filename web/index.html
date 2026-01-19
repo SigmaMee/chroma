@@ -146,71 +146,13 @@
                 <div class="options-heading">Options</div>
                 <div class="option-section">
                   <div class="option-label">
-                    Harmony mode
-                    <span class="helper">(Choose tint color relationship)</span>
+                    Tint color
+                    <span class="helper">(Color used to tint neutral palette)</span>
                   </div>
-                  <div class="harmony-cards">
-                    <!-- Monochromatic -->
-                    <div class="harmony-card">
-                      <div class="harmony-header">
-                        <img src="assets/Unity.svg" alt="Unity icon" class="harmony-icon" />
-                        <h3>Monochromatic</h3>
-                        <p class="harmony-description">Unified, pure tonal variation. All neutrals share identical temperature.</p>
-                      </div>
-                      <div class="harmony-swatches">
-                        <button class="harmony-swatch active" data-mode="primary" data-variant="" title="Monochromatic (same hue)">
-                          <span class="swatch-color" style="background: #8B95A7;"></span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Complementary -->
-                    <div class="harmony-card">
-                      <div class="harmony-header">
-                        <img src="assets/Opposition.svg" alt="Opposition icon" class="harmony-icon" />
-                        <h3>Complementary</h3>
-                        <p class="harmony-description">Maximum contrast, opposing warmth. Creates dramatic cool vs warm neutrals.</p>
-                      </div>
-                      <div class="harmony-swatches">
-                        <button class="harmony-swatch" data-mode="complimentary" data-variant="" title="Complementary (180°)">
-                          <span class="swatch-color" style="background: #A78B92;"></span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Analogous -->
-                    <div class="harmony-card">
-                      <div class="harmony-header">
-                        <img src="assets/Harmony.svg" alt="Harmony icon" class="harmony-icon" />
-                        <h3>Analogous</h3>
-                        <p class="harmony-description">Harmonious, gentle variation. Subtle temperature shift within same color family.</p>
-                      </div>
-                      <div class="harmony-swatches">
-                        <button class="harmony-swatch" data-mode="analogous" data-variant="plus" title="Analogous +30°">
-                          <span class="swatch-color" style="background: #928BA7;"></span>
-                        </button>
-                        <button class="harmony-swatch" data-mode="analogous" data-variant="minus" title="Analogous -30°">
-                          <span class="swatch-color" style="background: #8BA0A7;"></span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Triadic -->
-                    <div class="harmony-card">
-                      <div class="harmony-header">
-                        <img src="assets/Vibrance.svg" alt="Vibrance icon" class="harmony-icon" />
-                        <h3>Triadic</h3>
-                        <p class="harmony-description">Balanced but vibrant, evenly spaced. Moderate contrast with balanced temperature.</p>
-                      </div>
-                      <div class="harmony-swatches">
-                        <button class="harmony-swatch" data-mode="triadic" data-variant="plus" title="Triadic +120°">
-                          <span class="swatch-color" style="background: #A78B92;"></span>
-                        </button>
-                        <button class="harmony-swatch" data-mode="triadic" data-variant="minus" title="Triadic -120°">
-                          <span class="swatch-color" style="background: #92A78B;"></span>
-                        </button>
-                      </div>
-                    </div>
+                  <div class="color-input-group">
+                    <input type="color" id="tintColorPicker" value="#3366FF" />
+                    <input type="text" id="tintHexInput" placeholder="#3366FF" maxlength="7" value="#3366FF" />
+                    <button id="tintSwatch" class="color-swatch" style="background: #3366FF;" tabindex="0" aria-label="Open tint color picker"></button>
                   </div>
                 </div>
                 <div>
