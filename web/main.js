@@ -1977,9 +1977,9 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
       return seedIndex >= 0 ? { index: seedIndex, color: primaryScaleEntries[seedIndex] } : null;
     }
     
-    // surfacePrimary uses the seed color (500), with variants 2 steps lighter/darker
-    // Subtle: 2 steps lighter (e.g., 500→300)
-    // Medium: seed itself (e.g., 500)
+    // surfacePrimary uses the seed color (500), with variants at 100 and 700
+    // Subtle: 100
+    // Medium: seed (500)
     // Strong: 2 steps darker (e.g., 500→700)
     
     let lowEmphasisLabel = null;
@@ -1990,9 +1990,10 @@ function createTokens(scale, prefix, primaryData, derivedData, semanticNeutral, 
       // Medium = seed (500)
       mediumEmphasisLabel = getPrimaryLabel(primaryScaleEntries[seedIndex]);
       
-      // Low = 2 steps lighter (lower index)
-      if (seedIndex - 2 >= 0) {
-        lowEmphasisLabel = getPrimaryLabel(primaryScaleEntries[seedIndex - 2]);
+      // Low = 100 (find the entry with label "100")
+      const subtleEntry = primaryScaleEntries.find(e => getPrimaryLabel(e) === "100");
+      if (subtleEntry) {
+        lowEmphasisLabel = "100";
       }
       
       // High = 2 steps darker (higher index)
